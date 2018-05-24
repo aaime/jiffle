@@ -25,13 +25,22 @@
 
 package org.jaitools.jiffle.parser;
 
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CommonTokenStream;
-import org.antlr.runtime.Token;
-import org.antlr.runtime.tree.CommonTree;
-import org.antlr.runtime.tree.CommonTreeNodeStream;
+import static org.junit.Assert.assertThat;
 
-import static org.junit.Assert.*;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.hamcrest.CoreMatchers;
+import org.jaitools.jiffle.Jiffle;
+import org.jaitools.jiffle.JiffleException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Lexes and parses Jiffle scripts for unit tests.
@@ -41,6 +50,20 @@ import static org.junit.Assert.*;
  * @version $Id$
  */
 public abstract class ParserTestBase {
+    static final int DOWN = -3;
+    static final int UP = -4;
+
+    /**
+     * Helper function to scan and parse an input script and
+     * prepare a tree node stream for a tree walker
+     *
+     * @param input input jiffle script
+     * @return the AST as a tree node stream with attached tokens
+     * @throws java.lang.Exception
+     */
+    protected int[] getAST(String script) throws Exception {
+        return getAST(script, parser -> parser.script());
+    }
     
     /**
      * Helper function to scan and parse an input script and
@@ -50,27 +73,69 @@ public abstract class ParserTestBase {
      * @return the AST as a tree node stream with attached tokens
      * @throws java.lang.Exception
      */
-    protected CommonTreeNodeStream getAST(String input) throws Exception {
+    protected int[] getAST(String script, Function<JiffleParser, ParseTree> parseDriver) throws Exception {
+        
 
-        ANTLRStringStream strm = new ANTLRStringStream(input);
-        JiffleLexer lexer = new JiffleLexer(strm);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        ParseTree tree = getParseTree(script, parseDriver);
+        List<Integer> types = new ArrayList<>();
+        walk(tree, types);
+        
+        int[] result = new int[types.size()];
+        for (int i = 0; i < result.length; i++) {
+            int type = types.get(i);
+            result[i] = type;
+        }
+        
+        return result;
+    }
+
+    protected ParseTree getParseTree(String script, Function<JiffleParser, ParseTree> parseDriver) {
+        CharStream input = CharStreams.fromString(script);
+
+        JiffleLexer lexer = new JiffleLexer(input);
+        TokenStream tokens = new CommonTokenStream(lexer);
 
         JiffleParser parser = new JiffleParser(tokens);
-        CommonTree tree = (CommonTree) parser.prog().getTree();
 
-        CommonTreeNodeStream nodes = new CommonTreeNodeStream(tree);
-        nodes.setTokenStream(tokens);
-        
-        return nodes;
+        return parseDriver.apply(parser);
+    }
+
+    private void walk(ParseTree tree, List<Integer> types) {
+        if (tree instanceof RuleContext) {
+            RuleContext ruleContext = (RuleContext) tree;
+            int ruleIndex = ruleContext.getRuleIndex();
+            if (ruleIndex == JiffleParser.RULE_atom
+                    || ruleIndex == JiffleParser.RULE_identifiedAtom
+                    || ruleIndex == JiffleParser.RULE_literal) {
+                // ignore these, they just add noise
+                for (int i = 0; i < ruleContext.getChildCount(); i++) {
+                    walk(ruleContext.getChild(i), types);
+                }
+            } else {
+                types.add(ruleIndex);
+                if (ruleContext.getChildCount() > 0) {
+                    types.add(DOWN);
+                    for (int i = 0; i < ruleContext.getChildCount(); i++) {
+                        walk(ruleContext.getChild(i), types);
+                    }
+                    types.add(UP);
+                }
+            }
+        } else if (tree instanceof TerminalNode) {
+            int tokenType = ((TerminalNode) tree).getSymbol().getType();
+            types.add(tokenType);
+        } else {
+            throw new IllegalArgumentException("Don't know how to handle " + tree);
+        }
     }
     
-    protected void assertAST(CommonTreeNodeStream ast, int[] expected) {
-        int ttype;
-        int k = 0;
-        while ((ttype = ast.LA(1)) != Token.EOF) {
-            assertEquals(ttype, expected[k++]);
-            ast.consume();
-        }
+    protected void assertAST(int[] ast, int[] expected) {
+        assertThat(ast, CoreMatchers.equalTo(expected));
+    }
+
+    protected void compileScript(String script) throws JiffleException {
+        Jiffle jiffle = new Jiffle();
+        jiffle.setScript(script);
+        jiffle.compile();
     }
 }

@@ -2,6 +2,7 @@ package org.jaitools.jiffle.parser;
 
 import java.io.InputStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -11,6 +12,7 @@ import org.junit.Test;
 public class TestExpressionWorker {
 
     @Test
+    @Ignore
     public void foo() throws Exception {
         doParseAndWork("ValidScript.jfl");
     }

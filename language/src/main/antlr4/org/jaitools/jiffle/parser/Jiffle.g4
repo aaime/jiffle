@@ -86,7 +86,7 @@ statement       : block                                             # blockStmt
                 | FOREACH LPAR ID IN loopSet RPAR statement         # foreachStmt
                 | BREAKIF LPAR expression RPAR SEMI                 # breakifStmt
                 | BREAK SEMI                                        # breakStmt
-                | ID APPEND expression                              # listAppendStmt
+                | ID APPEND expression SEMI                         # listAppendStmt
                 | expression SEMI                                   # exprStmt
                 | SEMI                                              # emptyStmt
                 ;
@@ -106,7 +106,7 @@ range           : expression COLON expression
 
 
 expression      : atom                                              # atomExpr
-                | expression POW<assoc=right> expression            # powExpr
+                |<assoc=right> expression POW expression            # powExpr
                 | expression (INCR | DECR)                          # postExpr
                 | (INCR | DECR | PLUS | MINUS) expression           # preExpr
                 | NOT expression                                    # notExpr
@@ -185,7 +185,7 @@ literal         : INT_LITERAL
                 ;
 
 
-listLiteral     : LSQUARE expressionList RSQUARE
+listLiteral     : LSQUARE expressionList? RSQUARE
                 ;
 
 
@@ -311,9 +311,8 @@ WS  :   [ \t\r\n\u000C]+ -> channel(HIDDEN)
     ;
 
 
-/* 
+/*
  * The following are for future use 
- */
 
 CHAR:  '\'' ( ESC_SEQ | ~('\''|'\\') ) '\''
     ;
@@ -339,3 +338,5 @@ fragment
 UNICODE_ESC
     :   '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
     ;
+
+*/

@@ -56,12 +56,10 @@ public class FunctionLookupTest {
     public void oneAndTwoArgFunctions() throws Exception {
         System.out.println("   alternate one or two arg functions");
         String[] names = { "round", "log" };
-        List<String> oneArg = Arrays.asList("D");
-        List<String> twoArg = Arrays.asList("D", "D");
-        
+
         for (String name : names) {
-            assertNotNull(FunctionLookup.getInfo(name, oneArg));
-            assertNotNull(FunctionLookup.getInfo(name, twoArg));
+            assertNotNull(FunctionLookup.getInfo(name, JiffleType.D));
+            assertNotNull(FunctionLookup.getInfo(name, JiffleType.D, JiffleType.D));
         }
     }
     
@@ -69,17 +67,15 @@ public class FunctionLookupTest {
     public void minAndMax() throws Exception {
         System.out.println("   alternate min and max functions");
         String[] names = { "min", "max" };
-        List<String> oneArg = Arrays.asList("List");
-        List<String> twoArg = Arrays.asList("D", "D");
-        
+
         for (String name : names) {
-            FunctionInfo info = FunctionLookup.getInfo(name, oneArg);
+            FunctionInfo info = FunctionLookup.getInfo(name, JiffleType.LIST);
             assertNotNull(info);
-            assertTrue(info.getRuntimeExpr().contains("_FN."));
-            
-            info = FunctionLookup.getInfo(name, twoArg);
+            assertTrue(info.getRuntimeName().contains("_FN."));
+
+            info = FunctionLookup.getInfo(name, JiffleType.D, JiffleType.D);
             assertNotNull(info);
-            assertTrue(info.getRuntimeExpr().contains("Math."));
+            assertTrue(info.getRuntimeName().contains("Math."));
         }
     }
 }

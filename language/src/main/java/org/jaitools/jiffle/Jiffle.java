@@ -25,6 +25,23 @@
 
 package org.jaitools.jiffle;
 
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.jaitools.jiffle.parser.ImagesBlockWorker;
+import org.jaitools.jiffle.parser.InitBlockWorker;
+import org.jaitools.jiffle.parser.JiffleLexer;
+import org.jaitools.jiffle.parser.JiffleParser;
+import org.jaitools.jiffle.parser.JiffleParserErrorListener;
+import org.jaitools.jiffle.parser.Message;
+import org.jaitools.jiffle.parser.Messages;
+import org.jaitools.jiffle.parser.OptionsBlockWorker;
+import org.jaitools.jiffle.runtime.JiffleDirectRuntime;
+import org.jaitools.jiffle.runtime.JiffleIndirectRuntime;
+import org.jaitools.jiffle.runtime.JiffleRuntime;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -33,19 +50,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.TokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.jaitools.jiffle.parser.CompilerMessages;
-import org.jaitools.jiffle.parser.ImagesBlockWorker;
-import org.jaitools.jiffle.parser.JiffleLexer;
-import org.jaitools.jiffle.parser.JiffleParser;
-import org.jaitools.jiffle.parser.JiffleParserErrorListener;
-import org.jaitools.jiffle.runtime.JiffleDirectRuntime;
-import org.jaitools.jiffle.runtime.JiffleIndirectRuntime;
-import org.jaitools.jiffle.runtime.JiffleRuntime;
 
 /**
  * Compiles scripts and generates Java sources and executable bytecode for
@@ -378,9 +382,10 @@ public class Jiffle {
             
             setImageParams(r.result);
         }
+
+        reportMessages(new OptionsBlockWorker(parseResult.result).messages);
+        reportMessages(new InitBlockWorker(parseResult.result).messages);
         
-        
-        checkOptions();
         
         if (!transformAndCheckVars()) {
             throw new JiffleException(messagesToString());
@@ -519,7 +524,7 @@ public class Jiffle {
      * Builds the parse tree from the script.
      */
     private Jiffle.Result<ParseTree> parseScript() {
-        CharStream input = new ANTLRInputStream(theScript);
+        CharStream input = CharStreams.fromString(theScript);
         
         JiffleLexer lexer = new JiffleLexer(input);
         TokenStream tokens = new CommonTokenStream(lexer);
@@ -540,7 +545,14 @@ public class Jiffle {
     }
 
     private void reportMessages(Jiffle.Result result) throws JiffleException {
-        // TODO
+        reportMessages(result.messages);
+    }
+
+    private void reportMessages(Messages messages) throws JiffleException {
+        if (messages.isError()) {
+            String expectionMessage = messages.toString();
+            throw new JiffleException(expectionMessage);
+        }
     }
     
     /**
@@ -566,16 +578,6 @@ public class Jiffle {
             
             imageParams = scriptImageParams;
         }
-    }
-    
-    private void checkOptions() {
-        /* TODO
-         * 
-        CommonTreeNodeStream nodes = new CommonTreeNodeStream(primaryAST);
-        nodes.setTokenStream(tokens);
-        OptionsBlockReader reader = new OptionsBlockReader(nodes, msgTable);
-        reader.downup(primaryAST);
-        */
     }
 
     /**
@@ -622,9 +624,9 @@ public class Jiffle {
     
     private static class Result<T> {
         final T result;
-        final CompilerMessages messages;
+        final Messages messages;
 
-        public Result(T result, CompilerMessages messages) {
+        public Result(T result, Messages messages) {
             this.result = result;
             this.messages = messages;
         }

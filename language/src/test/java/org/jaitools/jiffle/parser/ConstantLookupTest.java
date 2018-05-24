@@ -38,32 +38,39 @@ import static org.junit.Assert.*;
 public class ConstantLookupTest {
     
     private final double TOL = 1.0e-8;
-    
+
+    @Test
     public void getPI() {
         assertEquals(Math.PI, ConstantLookup.getValue("M_PI"), TOL);
     }
-    
+
+    @Test
     public void getPIOn2() {
         assertEquals(Math.PI / 2.0, ConstantLookup.getValue("M_PI_2"), TOL);
     }
 
+    @Test
     public void getPIOn4() {
         assertEquals(Math.PI / 4.0, ConstantLookup.getValue("M_PI_4"), TOL);
     }
-    
+
+    @Test
     public void getSqrt2() {
         assertEquals(Math.sqrt(2.0), ConstantLookup.getValue("M_SQRT2"), TOL);
     }
-    
+
+    @Test
     public void getE() {
         assertEquals(Math.E, ConstantLookup.getValue("M_E"), TOL);
     }
-    
+
+    @Test
     public void getNanPrefix() {
         assertTrue(Double.isNaN( ConstantLookup.getValue("M_NaN")));
         assertTrue(Double.isNaN( ConstantLookup.getValue("M_NAN")));
     }
-    
+
+    @Test
     public void getNanNoPrefix() {
         assertTrue(Double.isNaN( ConstantLookup.getValue("NaN")));
         assertTrue(Double.isNaN( ConstantLookup.getValue("NAN")));

@@ -27,6 +27,8 @@ package org.jaitools.jiffle.parser;
 
 import org.antlr.v4.runtime.Token;
 
+import java.util.Objects;
+
 /**
  * A message relating to a position in an input script.
  *
@@ -50,5 +52,21 @@ public class CompilerMessage extends Message {
     @Override
     public String toString() {
         return String.format("%d:%d %s : %s", line, pos, level, msg);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CompilerMessage that = (CompilerMessage) o;
+        return line == that.line &&
+                pos == that.pos;
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(super.hashCode(), line, pos);
     }
 }

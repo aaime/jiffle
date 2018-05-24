@@ -25,7 +25,14 @@
 
 package org.jaitools.jiffle.parser;
 
+import org.hamcrest.CoreMatchers;
+import org.jaitools.jiffle.Jiffle;
+import org.jaitools.jiffle.JiffleException;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.HashMap;
 
 /**
  * Tests parsing options, init and images blocks correctly.
@@ -36,51 +43,61 @@ import org.junit.Test;
  */
 public class SpecialBlocksTest extends ParserTestBase {
     
-    @Test(expected=JiffleParserException.class)
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
+
+    @Test
     public void testDuplicateOptionsBlock() throws Exception {
-        System.out.println("   duplicate options block throws exception");
+        expected.expect(JiffleException.class);
+        expected.expectMessage(CoreMatchers.containsString("more than one options block"));
+        
         String script = 
                   "options { outside = 0; } \n"
                 + "options { outside = 0; } \n"
-                + "dest = 42;" ;
-                
-        getAST(script);
+                + "images { result = write; }\n"          
+                + "result = 42;" ;
+
+        compileScript(script);
+        return;
     }
-    
-    @Test(expected=JiffleParserException.class)
+
+    @Test
     public void testDuplicateInitBlock() throws Exception {
-        System.out.println("   duplicate init block throws exception");
+        expected.expect(JiffleException.class);
+        expected.expectMessage(CoreMatchers.containsString("more than one init block"));
+
         String script = 
                   "init { foo = 0; } \n"
-                + "init { bar = 0; } \n"
+                + "init { bar = 0; } \n" 
+                + "images { result = write; }\n"
                 + "dest = 42;" ;
-                
-        getAST(script);
+
+        compileScript(script);
     }
-    
-    @Test(expected=JiffleParserException.class)
+
+    @Test
     public void testDuplicateImagesBlock() throws Exception {
-        System.out.println("   duplicate images block throws exception");
+        expected.expect(JiffleException.class);
+        expected.expectMessage(CoreMatchers.containsString("more than one image block"));
+
         String script = 
                   "images { dest = write; } \n"
                 + "images { dest = write; } \n"
                 + "dest = 42;" ;
-                
-        getAST(script);
+
+        compileScript(script);
     }
     
     @Test
     public void validlockPlacement() throws Exception {
-        System.out.println("   any order of blocks should be valid");
-        
         String[] blocks = {
             "options { outside = 0; }\n",
             "init { foo = 42; }\n",
             "images { src=read; dest=write; }\n"
         };
-        
+
         String body = "dest = src + foo;";
-        
+
         int[][] blockPos = {
             {0, 1, 2},
             {0, 2, 1},
@@ -96,8 +113,8 @@ public class SpecialBlocksTest extends ParserTestBase {
                     blocks[pos[1]] + 
                     blocks[pos[2]] + 
                     body;
-            
-            getAST(script);
+
+            compileScript(script);
         }
     }
 }

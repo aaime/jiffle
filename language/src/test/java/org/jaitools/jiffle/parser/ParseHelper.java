@@ -1,12 +1,13 @@
 package org.jaitools.jiffle.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  *
@@ -15,11 +16,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class ParseHelper {
     
     public static ParseTree parse(String script) {
-        return doParse(new ANTLRInputStream(script));
+        return doParse(CharStreams.fromString(script));
     }
     
     public static ParseTree parse(InputStream input) throws IOException {
-        return doParse(new ANTLRInputStream(input));
+        return doParse(CharStreams.fromStream(input));
     }
     
     private static ParseTree doParse(CharStream stream) {
