@@ -1,6 +1,8 @@
 package org.jaitools.jiffle.parser;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -17,12 +19,12 @@ public class ExpressionWorkerTest extends AbstractWorkerTest<ExpressionWorker> {
 
     @Test
     public void testAssignListToScalar() throws Exception {
-        assertFileHasError("AssignListToScalar.jfl", Errors.ASSIGNMENT_LIST_TO_SCALAR.toString());
+        assertFileHasError("AssignListToScalar.jfl", Errors.ASSIGNMENT_LIST_TO_SCALAR);
     }
 
     @Test
     public void testAssignScalarToList() throws Exception {
-        assertFileHasError("AssignScalarToList.jfl", Errors.ASSIGNMENT_SCALAR_TO_LIST.toString());
+        assertFileHasError("AssignScalarToList.jfl", Errors.ASSIGNMENT_SCALAR_TO_LIST);
     }
 
     @Test
@@ -34,7 +36,7 @@ public class ExpressionWorkerTest extends AbstractWorkerTest<ExpressionWorker> {
         for (String op : operators) {
             String script = template.replace("<op>", op);
             LOGGER.info("Testing operator " + op);
-            assertScriptHasError(script, Errors.INVALID_OPERATION_FOR_LIST.toString());    
+            assertScriptHasError(script, Errors.INVALID_OPERATION_FOR_LIST);    
         }
         // valid
         assertScriptHasNoErrors(template.replace("<op>", "="));
@@ -42,13 +44,12 @@ public class ExpressionWorkerTest extends AbstractWorkerTest<ExpressionWorker> {
 
     @Test
     public void testListInTernary() throws Exception {
-        assertFileHasError("ListInTernary.jfl", Errors.LIST_AS_TERNARY_CONDITION.toString());
+        assertFileHasError("ListInTernary.jfl", Errors.LIST_AS_TERNARY_CONDITION);
     }
 
     @Test
     public void testListInTernaryComparison() throws Exception {
-        assertFileHasError("ListInTernaryComparison.jfl",
-                Errors.LIST_AS_TERNARY_CONDITION.toString());
+        assertFileHasError("ListInTernaryComparison.jfl", Errors.LIST_AS_TERNARY_CONDITION);
     }
 
     @Test
@@ -60,6 +61,30 @@ public class ExpressionWorkerTest extends AbstractWorkerTest<ExpressionWorker> {
     public void testUninitializedVariable() throws Exception {
         assertFileHasError("UninitializedVariable.jfl", Errors.UNINIT_VAR + ": b");
     }
+
+    @Test
+    public void testUndefinedFunctionUse() throws Exception {
+        String script = "x = 1; myVar = func123(x);";
+        assertScriptHasError(script, "Undefined function: func123(D)");
+    }
+
+    @Test
+    public void testInvalidScalarFunctionArgument() throws Exception {
+        String script = "myVar = sin([1, 2, 3]);";
+        assertScriptHasError(script, "Undefined function: sin(LIST)");
+    }
+
+    @Test
+    public void testAssignListFunctionToScalar() throws Exception {
+        String script = "var = 1; var = concat([1, 2, 3], [4, 5]);";
+        assertScriptHasError(script, Errors.ASSIGNMENT_LIST_TO_SCALAR);
+    }
+
+    @Test
+    public void testAssignScalarFunctionToList() throws Exception {
+        String script = "var = [1, 2, 3]; var = sin(1.35);";
+        assertScriptHasError(script, Errors.ASSIGNMENT_SCALAR_TO_LIST);
+    }
     
     @Override
     protected Pair<ParseTree, ExpressionWorker> runWorker(ParseTree tree)
@@ -68,5 +93,12 @@ public class ExpressionWorkerTest extends AbstractWorkerTest<ExpressionWorker> {
         VarWorker vw = new VarWorker(tree, ibw.imageVars);
         ExpressionWorker ew = new ExpressionWorker(tree, vw);
         return new Pair(tree, ew);
+    }
+
+    @Test
+    public void imagePosOnNonImage() throws Exception {
+        assertFileHasError(
+                "ImagePosOnNonImage.jfl",
+                Errors.IMAGE_POS_ON_NON_IMAGE + ": x");
     }
 }

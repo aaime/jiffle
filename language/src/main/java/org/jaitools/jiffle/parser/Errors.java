@@ -51,12 +51,12 @@ public enum Errors {
     
     WRITING_TO_SOURCE_IMAGE("Attempting to write to source image"),
 
-    UNINIT_VAR("Variable used before being assigned a value");
+    UNDEFINED_SOURCE("Unknown source image"),
 
-    // unused, yet seems like it should be checked
-    // IMAGE_POS_ON_DEST("Image position cannot be specified for a destination image");
-    // IMAGE_POS_ON_NON_IMAGE("Image position specifier(s) used with a non-image variable");
-    // NON_LIST_FUNCTION("List argument cannot be used with this function");
+    UNINIT_VAR("Variable used before being assigned a value"),
+
+    IMAGE_POS_ON_NON_IMAGE("Image position specifier(s) used with a non-image variable");
+
     
     private final String msg;
     

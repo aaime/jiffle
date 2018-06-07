@@ -34,6 +34,18 @@ public abstract class AbstractWorkerTest<T extends BaseWorker> {
         assertThat(result.b.messages, Matchers.hasProperty("error", equalTo(false)));
     }
 
+    /**
+     * Checks the script has the expected error type (among others)
+     *
+     * @param scriptFileName
+     * @param errorMessage
+     * @throws Exception
+     */
+    protected void assertFileHasError(String scriptFileName, Errors errorMessage) throws Exception {
+        Pair<ParseTree, T> result = parseFileAndDoWork(scriptFileName);
+        assertWorkerHasError(result.b, errorMessage.toString());
+    }
+
 
     /**
      * Checks the script has the expected error type (among others)
@@ -57,6 +69,18 @@ public abstract class AbstractWorkerTest<T extends BaseWorker> {
     protected void assertScriptHasNoErrors(String script) throws Exception {
         Pair<ParseTree, T> result = parseStringAndDoWork(script);
         assertThat(result.b.messages, Matchers.hasProperty("error", equalTo(false)));
+    }
+
+    /**
+     * Checks the script has the expected error type (among others)
+     *
+     * @param errorMesssage
+     * @param scriptFileName
+     * @throws Exception
+     */
+    protected void assertScriptHasError(String script, Errors errorMesssage) throws Exception {
+        Pair<ParseTree, T> result = parseStringAndDoWork(script);
+        assertWorkerHasError(result.b, errorMesssage.toString());
     }
 
     /**

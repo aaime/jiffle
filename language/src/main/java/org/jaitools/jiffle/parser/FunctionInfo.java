@@ -25,6 +25,7 @@
 package org.jaitools.jiffle.parser;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.jaitools.CollectionFactory;
@@ -188,6 +189,10 @@ public class FunctionInfo {
      */
     public int getNumArgs() {
         return argTypes.size();
+    }
+
+    public List<JiffleType> getArgTypes() {
+        return Collections.unmodifiableList(argTypes);
     }
 
     /**

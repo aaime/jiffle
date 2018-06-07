@@ -30,6 +30,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.parser.JiffleParser.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Labels expression nodes with their Jiffle types. Expects that
  * the parse tree has been previously annotated by a VarWorker.
@@ -38,10 +41,12 @@ import org.jaitools.jiffle.parser.JiffleParser.*;
  */
 public class ExpressionWorker extends PropertyWorker<JiffleType> {
     private final TreeNodeProperties<SymbolScope> scopes;
+    private final SymbolScope globalScope;
 
     public ExpressionWorker(ParseTree tree, VarWorker vw) {
         super(tree);
         this.scopes = vw.getProperties();
+        this.globalScope = this.scopes.get(tree);
         walkTree();
     }
 
@@ -311,14 +316,10 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
                 set(ctx, JiffleType.LIST);
                 break;
 
-//            case UNKNOWN:
             default:
                 set(ctx, JiffleType.UNKNOWN);
                 break;
                 
-//            default:
-//                // assume it is a scalar
-//                set(ctx, JiffleType.D);
         }
 
         Symbol.Type type = scope.get(name).getType();
@@ -329,6 +330,13 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
     
     @Override
     public void exitImageCall(ImageCallContext ctx) {
+        String name = ctx.ID().getSymbol().getText();
+        Symbol symbol = globalScope.get(name);
+        if (symbol == null || symbol.getType() == Symbol.Type.UNKNOWN) {
+            messages.error(ctx.ID().getSymbol(), Errors.UNDEFINED_SOURCE + ": " + name);
+        } else if (symbol.getType() == Symbol.Type.SCALAR || symbol.getType() == Symbol.Type.LIST) {
+            messages.error(ctx.ID().getSymbol(), Errors.IMAGE_POS_ON_NON_IMAGE + ": " + name);
+        } 
         set(ctx, JiffleType.D);
     }
     
@@ -336,13 +344,21 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
     public void exitFunctionCall(FunctionCallContext ctx) {
         String name = ctx.ID().getText();
         try {
-            set( ctx, FunctionLookup.getReturnType(name) );
-            
+            // do a lookup with full type information
+            List<ExpressionContext> expressions = ctx.argumentList().expressionList().expression();
+            List<JiffleType> argumentTypes = new ArrayList<>();
+            for (ExpressionContext expression : expressions) {
+                JiffleType type = get(expression);
+                argumentTypes.add(type);
+            }
+            JiffleType[] array = argumentTypes.toArray(new JiffleType[argumentTypes.size()]);
+            set( ctx, FunctionLookup.getInfo(name, array).getReturnType());
         } catch (UndefinedFunctionException ex) {
-            // just give up
-            throw new JiffleParserException(ex);
+            messages.error(ctx.ID().getSymbol(), ex.getMessage());
         }
     }
+    
+    
 
     @Override
     public void exitLiteral(LiteralContext ctx) {
@@ -354,6 +370,8 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
     public void exitListLiteral(ListLiteralContext ctx) {
         set(ctx, JiffleType.LIST);
     }
+
+    
 
     /*
      * Looks up the inner-most scope for a rule node.

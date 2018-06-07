@@ -116,7 +116,6 @@ public class VarWorkerTest extends AbstractWorkerTest<VarWorker> {
                 "Variable not initialized prior to use: b");
     }
 
-
     protected Pair<ParseTree, VarWorker> runWorker(ParseTree tree) throws Exception {
         ImagesBlockWorker ib = new ImagesBlockWorker(tree);
         return new Pair(tree, new VarWorker(tree, ib.imageVars));
