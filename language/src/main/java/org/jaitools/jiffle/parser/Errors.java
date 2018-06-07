@@ -40,15 +40,24 @@ public enum Errors {
     NOT_OP_IS_INVALID_FOR_LIST("Logical negation is not valid with a list variable"),
     
     POW_EXPR_WITH_LIST_EXPONENT("A list variable cannot be used as the exponent in a power expression"),
-    
+
+    INVALID_OPERATION_FOR_LIST("Invalid operation for list variable"),
+
     READING_FROM_DEST_IMAGE("Attempting to read from destination image"),
     
     UNKNOWN_FUNCTION("Uknown function"),
     
     VAR_UNDEFINED("Variable not initialized prior to use"),
     
-    WRITING_TO_SOURCE_IMAGE("Attempting to write to source image");
+    WRITING_TO_SOURCE_IMAGE("Attempting to write to source image"),
 
+    UNINIT_VAR("Variable used before being assigned a value");
+
+    // unused, yet seems like it should be checked
+    // IMAGE_POS_ON_DEST("Image position cannot be specified for a destination image");
+    // IMAGE_POS_ON_NON_IMAGE("Image position specifier(s) used with a non-image variable");
+    // NON_LIST_FUNCTION("List argument cannot be used with this function");
+    
     private final String msg;
     
     private Errors(String msg) {

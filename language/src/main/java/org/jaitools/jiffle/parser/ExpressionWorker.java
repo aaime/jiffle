@@ -25,7 +25,9 @@
 
 package org.jaitools.jiffle.parser;
 
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.parser.JiffleParser.*;
 
 /**
@@ -154,16 +156,33 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
         
         if (leftType == rightType) {
             // single type expression so result is same type
-            set(ctx, leftType);
-            
+            set(ctx, rightType);
         } else {
             // if different, they must be scalar and list so
             // result is list
             set(ctx, JiffleType.LIST);
         }
     }
-    
-    
+
+    protected JiffleType get(ExpressionContext ctx) {
+        if (ctx instanceof AtomExprContext) {
+            AtomExprContext atom = (AtomExprContext) ctx;
+            IdentifiedAtomContext identifiedAtomContext = atom.atom().identifiedAtom();
+            if (identifiedAtomContext instanceof VarIDContext) {
+                VarIDContext var = (VarIDContext) identifiedAtomContext;
+                String varName = var.ID().getSymbol().getText();
+                Symbol symbol = getScope(ctx).get(varName);
+                if (symbol.getType() == null || symbol.getType() == Symbol.Type.UNKNOWN) {
+                    return JiffleType.UNKNOWN;
+                } else if (symbol.getType() == Symbol.Type.LIST) {
+                    return JiffleType.LIST;
+                } else {
+                    return JiffleType.D; // variable or source image                    
+                }
+            }
+        }
+        return super.get(ctx);
+    }
 
     @Override
     public void exitAssignment(AssignmentContext ctx) {
@@ -179,8 +198,7 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
             // Symbol was of unknown type.
             // Replace it with a properly typed one.
             //
-            Symbol.Type stype = rhsType == JiffleType.D ? 
-                    Symbol.Type.SCALAR : Symbol.Type.LIST;
+            Symbol.Type stype = getSymbolType(rhsType);
             
             scope.add(new Symbol(name, stype), true);
             
@@ -197,11 +215,69 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
                     break;
                     
                 case LIST:
+                    if (JiffleParser.ASSIGN != ctx.op.getType()) {
+                        messages.error(ctx.ID().getSymbol(), Errors.INVALID_OPERATION_FOR_LIST);
+                    } else if (rhsType == JiffleType.D) {
+                        messages.error(ctx.ID().getSymbol(), Errors.ASSIGNMENT_SCALAR_TO_LIST);
+                    }
+                    break;
+            }
+        }
+    }
+
+    /**
+     * This method is a copy of exitAssignment, unfortunately AssignmentContext
+     * and VarDeclarationContext share structure but not a base class
+     * @param ctx
+     */
+    @Override
+    public void exitVarDeclaration(VarDeclarationContext ctx) {
+        JiffleType rhsType = get(ctx.expression());
+        set(ctx, rhsType);
+
+        // Ensure valid type for LHS variable
+        String name = ctx.ID().getText();
+        SymbolScope scope = getScope(ctx);
+        Symbol symbol = scope.get(name);
+
+        if (symbol.getType() == Symbol.Type.UNKNOWN) {
+            // Symbol was of unknown type.
+            // Replace it with a properly typed one.
+            //
+            Symbol.Type stype = getSymbolType(rhsType);
+
+            scope.add(new Symbol(name, stype), true);
+
+        } else {
+            // Symbol was of known type.
+            // Ensure it is compatible with RHS expression type.
+            //
+            switch (symbol.getType()) {
+                case SCALAR:
+                case DEST_IMAGE:
+                    if (rhsType == JiffleType.LIST) {
+                        messages.error(ctx.ID().getSymbol(), Errors.ASSIGNMENT_LIST_TO_SCALAR);
+                    }
+                    break;
+
+                case LIST:
                     if (rhsType == JiffleType.D) {
                         messages.error(ctx.ID().getSymbol(), Errors.ASSIGNMENT_SCALAR_TO_LIST);
                     }
                     break;
             }
+        }
+    }
+
+    private Symbol.Type getSymbolType(JiffleType type) {
+        if (type == null || type == JiffleType.UNKNOWN) {
+            return Symbol.Type.UNKNOWN;
+        } else if (type == JiffleType.D) {
+            return Symbol.Type.SCALAR;
+        } else if (type == JiffleType.LIST) {
+            return Symbol.Type.LIST;
+        } else {
+            throw new IllegalArgumentException("Symbol type unknown: " + type);
         }
     }
 
@@ -235,13 +311,19 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
                 set(ctx, JiffleType.LIST);
                 break;
 
-            case UNKNOWN:
+//            case UNKNOWN:
+            default:
                 set(ctx, JiffleType.UNKNOWN);
                 break;
                 
-            default:
-                // assume it is a scalar
-                set(ctx, JiffleType.D);
+//            default:
+//                // assume it is a scalar
+//                set(ctx, JiffleType.D);
+        }
+
+        Symbol.Type type = scope.get(name).getType();
+        if (type == Symbol.Type.UNKNOWN) {
+            messages.error(ctx.ID().getSymbol(), Errors.UNINIT_VAR + ": " + name);
         }
     }
     

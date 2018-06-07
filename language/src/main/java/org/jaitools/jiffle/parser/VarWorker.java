@@ -74,12 +74,10 @@ public class VarWorker extends PropertyWorker<SymbolScope> {
             
             if (isImage(name)) {
                 error(tok, Errors.IMAGE_VAR_INIT_BLOCK, name);
-                
             } else if (currentScope.has(name)) {
                 error(tok, Errors.DUPLICATE_VAR_DECL, name);
-                
             } else {
-                currentScope.add(new Symbol(name, Symbol.Type.SCALAR));
+                currentScope.add(new Symbol(name, Symbol.Type.UNKNOWN));
             }
         }
         
@@ -139,11 +137,9 @@ public class VarWorker extends PropertyWorker<SymbolScope> {
              // To get here we must be processing the RHS of
              // an expression, so any vars should be defined.
             error(tok, Errors.VAR_UNDEFINED, name);
-            
         } else if (isDestImage(name)) {
             error(tok, Errors.READING_FROM_DEST_IMAGE, name);
         }
-        
     }
 
     @Override
@@ -165,18 +161,15 @@ public class VarWorker extends PropertyWorker<SymbolScope> {
         if (isLoopVar(name)) {
             // Trying to assign to a loop var within loop scope
             error(tok, Errors.ASSIGNMENT_TO_LOOP_VAR, name);
-            
         } else if (isSourceImage(name)) {
             // Trying to write to a source image
             error(tok, Errors.WRITING_TO_SOURCE_IMAGE, name);
             return false;
-            
         } else if (isDestImage(name) && ctx.ASSIGN() == null) {
             // Using operator other than simple assignment (=) with 
             // destination image
             error(tok, Errors.INVALID_ASSIGNMENT_OP_WITH_DEST_IMAGE, name);
             return false;
-        
         } else if (ConstantLookup.isDefined(name)) {
             // Trying to write to a built-in constant
             error(tok, Errors.ASSIGNMENT_TO_CONSTANT, name);
