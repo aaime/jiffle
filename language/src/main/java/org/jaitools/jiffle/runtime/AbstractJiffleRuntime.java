@@ -468,7 +468,9 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * @param index the index of the variable
      * @return the default value or {@code null} if one is not defined
      */
-    protected abstract Double getDefaultValue(int index);
+    protected Double getDefaultValue(int index) {
+        return null;
+    }
 
     /**
      * Initializes runtime class fields related to Jiffle script options.

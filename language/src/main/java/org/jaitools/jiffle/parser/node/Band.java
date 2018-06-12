@@ -21,5 +21,10 @@ public class Band implements Node {
             return "(int)(" + index + ")";
         }
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
 }

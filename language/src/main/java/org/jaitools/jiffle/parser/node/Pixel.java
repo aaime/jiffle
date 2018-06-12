@@ -32,5 +32,11 @@ public class Pixel implements Node {
     public String toString() {
         return Strings.commas(x, y);
     }
-    
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
+
+
 }

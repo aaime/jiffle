@@ -25,15 +25,78 @@
 
 package org.jaitools.jiffle.parser;
 
-import java.util.Collections;
-import java.util.List;
+import static org.jaitools.jiffle.parser.JiffleParser.ASSIGN;
+import static org.jaitools.jiffle.parser.JiffleParser.AndExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.AssignExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.AssignmentContext;
+import static org.jaitools.jiffle.parser.JiffleParser.AtomContext;
+import static org.jaitools.jiffle.parser.JiffleParser.AtomExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.BandSpecifierContext;
+import static org.jaitools.jiffle.parser.JiffleParser.BodyContext;
+import static org.jaitools.jiffle.parser.JiffleParser.CompareExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ConCallContext;
+import static org.jaitools.jiffle.parser.JiffleParser.EqExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ExprStmtContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ExpressionContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ExpressionListContext;
+import static org.jaitools.jiffle.parser.JiffleParser.FunctionCallContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ImageCallContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ImagePosContext;
+import static org.jaitools.jiffle.parser.JiffleParser.InitBlockContext;
+import static org.jaitools.jiffle.parser.JiffleParser.LiteralContext;
+import static org.jaitools.jiffle.parser.JiffleParser.NotExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.OrExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ParenExpressionContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PixelPosContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PixelSpecifierContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PlusMinusExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PostExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PowExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.PreExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.ScriptContext;
+import static org.jaitools.jiffle.parser.JiffleParser.StatementContext;
+import static org.jaitools.jiffle.parser.JiffleParser.TernaryExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.TimesDivModExprContext;
+import static org.jaitools.jiffle.parser.JiffleParser.VarDeclarationContext;
+import static org.jaitools.jiffle.parser.JiffleParser.VarIDContext;
+import static org.jaitools.jiffle.parser.JiffleParser.XorExprContext;
+
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.jaitools.CollectionFactory;
 import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.Jiffle.RuntimeModel;
-import static org.jaitools.jiffle.parser.JiffleParser.*;
-import org.jaitools.jiffle.parser.node.*;
+import org.jaitools.jiffle.parser.node.Band;
+import org.jaitools.jiffle.parser.node.BinaryExpression;
+import org.jaitools.jiffle.parser.node.ConFunction;
+import org.jaitools.jiffle.parser.node.ConstantLiteral;
+import org.jaitools.jiffle.parser.node.DefaultScalarValue;
+import org.jaitools.jiffle.parser.node.DoubleLiteral;
+import org.jaitools.jiffle.parser.node.Expression;
+import org.jaitools.jiffle.parser.node.FunctionCall;
+import org.jaitools.jiffle.parser.node.GetSourceValue;
+import org.jaitools.jiffle.parser.node.GlobalVars;
+import org.jaitools.jiffle.parser.node.ImagePos;
+import org.jaitools.jiffle.parser.node.IntLiteral;
+import org.jaitools.jiffle.parser.node.ListVar;
+import org.jaitools.jiffle.parser.node.Node;
+import org.jaitools.jiffle.parser.node.NodeException;
+import org.jaitools.jiffle.parser.node.ParenExpression;
+import org.jaitools.jiffle.parser.node.Pixel;
+import org.jaitools.jiffle.parser.node.PostfixUnaryExpression;
+import org.jaitools.jiffle.parser.node.PrefixUnaryExpression;
+import org.jaitools.jiffle.parser.node.ScalarVar;
+import org.jaitools.jiffle.parser.node.Script;
+import org.jaitools.jiffle.parser.node.SetDestValue;
+import org.jaitools.jiffle.parser.node.SimpleStatement;
+import org.jaitools.jiffle.parser.node.Statement;
+import org.jaitools.jiffle.parser.node.StatementList;
+import org.jaitools.jiffle.parser.node.Until;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Generates Java sources for the runtime class.
@@ -48,7 +111,8 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
     
     // Set to a non-null reference if an init block is found
     private InitBlockContext initBlockContext = null;
-    
+    private Script script;
+
     /**
      * Labels the parse tree with Node objects representing elements
      * of the runtime code. Expects that the tree has been previously
@@ -72,8 +136,9 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
         
         GlobalVars globals = initBlockContext == null ?
                 new GlobalVars() : getAsType(initBlockContext, GlobalVars.class);
-        
-        set(ctx, new Script(globals, stmts));
+
+        this.script = new Script(globals, stmts);
+        set(ctx, this.script);
     }
     
     @Override
@@ -119,7 +184,7 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
 
     @Override
     public void exitExprStmt(ExprStmtContext ctx) {
-        set(ctx, new Statement(getAsType(ctx.expression(), Expression.class)));
+        set(ctx, new SimpleStatement(getAsType(ctx.expression(), Expression.class)));
     }
 
     @Override
@@ -145,7 +210,7 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
 
     @Override
     public void exitPostExpr(PostExprContext ctx) {
-        String op = ctx.getChild(0).getText();
+        String op = ctx.getChild(1).getText();
         Expression e = getAsType(ctx.expression(), Expression.class);
         set(ctx, new PostfixUnaryExpression(e, op));
     }
@@ -293,6 +358,15 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
     @Override
     public void exitAtom(AtomContext ctx) {
         set( ctx, get(ctx.getChild(0)) );
+    }
+
+    @Override
+    public void exitFunctionCall(FunctionCallContext ctx) {
+        ExpressionListContext expressionList = ctx.argumentList().expressionList();
+        setFunctionCall(
+                ctx,
+                ctx.start.getText(),
+                expressionList == null ? Collections.emptyList() : expressionList.expression());
     }
 
     @Override
@@ -451,9 +525,15 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
     private <N extends Node> N getAsType(ParseTree ctx, Class<N> clazz) {
         if (get(ctx) == null) {
             // bummer - node property should have been set but wasn't
+            String lineColumn = "(unknown)";
+            if (ctx instanceof ParserRuleContext) {
+                ParserRuleContext prc = (ParserRuleContext) ctx;
+                Token start = prc.getStart();
+                lineColumn = "(" + start.getLine() + ":" + start.getCharPositionInLine() + ")";
+            }
             throw new IllegalStateException(
                     "Internal compiler error: no property set for node of type "
-                    + ctx.getClass().getSimpleName());
+                    + ctx.getClass().getSimpleName() + " at " + lineColumn);
         }
         
         try {
@@ -484,5 +564,32 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
         
         return exprs;
     }
-    
+
+    @Override
+    public void exitUntilStmt(JiffleParser.UntilStmtContext ctx) {
+        Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
+        StatementList statements = getAsType(ctx.statement(), StatementList.class);
+        set(ctx, new Until(condition, statements));
+    }
+
+    @Override
+    public void exitBlock(JiffleParser.BlockContext ctx) {
+        List<StatementContext> contexts = ctx.statement();
+        List<Statement>  statements = new ArrayList<>();
+        for (StatementContext context : contexts) {
+            Statement st = getAsType(context, Statement.class);
+            statements.add(st);
+        }
+        
+        set(ctx, new StatementList(statements));
+    }
+
+    @Override
+    public void exitBlockStmt(JiffleParser.BlockStmtContext ctx) {
+        set(ctx, get(ctx.block()));
+    }
+
+    public Script getScriptNode() {
+        return this.script;
+    }
 }

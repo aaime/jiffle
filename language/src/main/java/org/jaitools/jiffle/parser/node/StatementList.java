@@ -12,7 +12,7 @@ public class StatementList implements Node {
     private final List<Statement> stmts;
 
     public StatementList(List<Statement> stmts) {
-        this.stmts = new ArrayList<Statement>(stmts);
+        this.stmts = new ArrayList<>(stmts);
     }
 
     @Override
@@ -23,6 +23,11 @@ public class StatementList implements Node {
         }
         return sb.toString();
     }
-    
+
+    public void write(SourceWriter w) {
+        for (Statement stmt : stmts) {
+            stmt.write(w);
+        }
+    }
     
 }

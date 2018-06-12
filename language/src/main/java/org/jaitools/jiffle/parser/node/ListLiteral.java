@@ -17,4 +17,9 @@ public class ListLiteral extends Expression {
         super(JiffleType.LIST);
         this.args = args == null ? new Expression[0] : args;
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
 }

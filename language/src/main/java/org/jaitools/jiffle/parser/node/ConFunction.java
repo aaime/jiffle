@@ -44,6 +44,11 @@ public class ConFunction extends Expression {
         
         return DirectSources.conCall(argStrs);
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
     
 }

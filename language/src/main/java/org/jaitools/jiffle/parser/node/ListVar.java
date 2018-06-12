@@ -18,5 +18,10 @@ public class ListVar extends Expression {
     public String toString() {
         return name;
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
 }

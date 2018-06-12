@@ -13,5 +13,10 @@ public class DefaultScalarValue extends Expression {
     public DefaultScalarValue() {
         super(JiffleType.D);
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
 }

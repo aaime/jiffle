@@ -22,5 +22,7 @@ public class PostfixUnaryExpression extends Expression {
         return Strings.spaces(arg, op);
     }
 
-    
+    public void write(SourceWriter w) {
+        w.append(arg).append(op);
+    }
 }

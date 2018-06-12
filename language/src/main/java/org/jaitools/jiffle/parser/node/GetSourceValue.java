@@ -27,5 +27,9 @@ public class GetSourceValue extends Expression {
     public String toString() {
         return String.format(fmt, varName, pos);
     }
-    
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
 }

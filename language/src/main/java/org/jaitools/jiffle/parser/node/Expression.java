@@ -17,4 +17,5 @@ public abstract class Expression implements Node {
     public JiffleType getType() {
         return type;
     }
+
 }

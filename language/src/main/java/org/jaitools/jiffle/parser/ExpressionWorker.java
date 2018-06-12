@@ -25,6 +25,7 @@
 
 package org.jaitools.jiffle.parser;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.jaitools.jiffle.Jiffle;
@@ -345,11 +346,14 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
         String name = ctx.ID().getText();
         try {
             // do a lookup with full type information
-            List<ExpressionContext> expressions = ctx.argumentList().expressionList().expression();
+            ExpressionListContext expressionList = ctx.argumentList().expressionList();
             List<JiffleType> argumentTypes = new ArrayList<>();
-            for (ExpressionContext expression : expressions) {
-                JiffleType type = get(expression);
-                argumentTypes.add(type);
+            if (expressionList != null) {
+                List<ExpressionContext> expressions = expressionList.expression();
+                for (ExpressionContext expression : expressions) {
+                    JiffleType type = get(expression);
+                    argumentTypes.add(type);
+                }
             }
             JiffleType[] array = argumentTypes.toArray(new JiffleType[argumentTypes.size()]);
             set( ctx, FunctionLookup.getInfo(name, array).getReturnType());

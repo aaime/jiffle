@@ -22,5 +22,9 @@ public class PrefixUnaryExpression extends Expression {
         return Strings.spaces(op, arg);
     }
 
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
 }

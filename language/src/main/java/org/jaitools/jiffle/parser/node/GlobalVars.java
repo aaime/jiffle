@@ -6,7 +6,7 @@ import java.util.List;
  *
  * @author michael
  */
-public class GlobalVars implements Node {
+public class GlobalVars extends AbstractNode {
     private final List<BinaryExpression> inits;
 
     /**
@@ -25,12 +25,18 @@ public class GlobalVars implements Node {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
+    public void write(SourceWriter writer) {
         for (BinaryExpression init : inits) {
-            sb.append(init).append(";\n");
+            writer.indent();
+            init.write(writer);
+            writer.append(";");
+            writer.line();
         }
-        return sb.toString();
     }
 
+    public void writeFields(SourceWriter w) {
+        for (BinaryExpression init : inits) {
+            init.writeDeclaration(w);
+        }
+    }
 }

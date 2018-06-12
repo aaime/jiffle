@@ -155,6 +155,7 @@ identifiedAtom  : ID argumentList       # functionCall
 
 
 argumentList    : LPAR expressionList RPAR
+                | LPAR RPAR
                 ;
 
 

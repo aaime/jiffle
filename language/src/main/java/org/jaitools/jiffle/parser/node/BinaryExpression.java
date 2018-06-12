@@ -80,9 +80,18 @@ public class BinaryExpression extends Expression {
         this.right = right;
     }
 
-    @Override
-    public String toString() {
-        return String.format(op.getFormat(), left, right);
+    public void write(SourceWriter w) {
+        String leftCode = SourceWriter.write(left);
+        String rightCode = SourceWriter.write(right);
+        w.append(String.format(op.getFormat(), leftCode, rightCode));
+    }
+
+    public void writeDeclaration(SourceWriter w) {
+        if (left instanceof ScalarVar) {
+            w.line("Double " + left + ";");
+        } else {
+            w.line("List " + left + ";");
+        }
     }
 
 }

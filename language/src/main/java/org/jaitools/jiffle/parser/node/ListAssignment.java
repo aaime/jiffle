@@ -9,5 +9,10 @@ public class ListAssignment implements Node {
     public ListAssignment(String varName, Expression expr) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
     
 }

@@ -16,7 +16,12 @@ public class ScalarVar extends Expression {
 
     @Override
     public String toString() {
-        return name;
+        return "v_" + name;
+    }
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
     }
     
 }

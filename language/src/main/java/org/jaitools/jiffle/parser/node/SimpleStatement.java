@@ -4,23 +4,22 @@ package org.jaitools.jiffle.parser.node;
  *
  * @author michael
  */
-public class ParenExpression extends Expression {
+public class SimpleStatement implements Statement {
     private final Expression expr;
 
-    public ParenExpression(Expression e) {
-        super(e.getType());
+    public SimpleStatement(Expression e) {
         this.expr = e;
     }
 
     @Override
     public String toString() {
-        return "(" + expr + ")";
+        return expr + ";" ;
     }
 
     public void write(SourceWriter w) {
-        w.append("(");
+        w.indent();
         expr.write(w);
-        w.append(")");
+        w.append(";");
+        w.line();
     }
-    
 }

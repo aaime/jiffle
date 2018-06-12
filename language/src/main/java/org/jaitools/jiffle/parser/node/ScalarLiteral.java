@@ -18,5 +18,9 @@ public abstract class ScalarLiteral extends Expression {
     public String toString() {
         return value;
     }
-    
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
 }

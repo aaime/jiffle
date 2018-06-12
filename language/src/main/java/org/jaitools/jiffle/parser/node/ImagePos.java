@@ -21,6 +21,9 @@ public class ImagePos implements Node {
     public String toString() {
         return Strings.commas(pixel, band);
     }
-    
-    
+
+    public void write(SourceWriter w) {
+        String line = toString();
+        w.append(line);
+    }
 }
