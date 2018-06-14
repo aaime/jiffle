@@ -36,11 +36,11 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
         double v_Z_im = v_c_im;
         double v_outside = 0;
         double v_n = 0;
-        while (_FN.sign(_FN.GE(v_n, v_MaxIter)) == 0) {
+        while (!_FN.isTrue(_FN.GE(v_n, v_MaxIter))) {
             double v_Z_re2 = v_Z_re * v_Z_re;
             double v_Z_im2 = v_Z_im * v_Z_im;
             v_outside = _FN.GT(v_Z_re2 + v_Z_im2, 4);
-            if (_FN.sign(v_outside) == 1) break;
+            if (_FN.isTrue(v_outside)) break;
             v_Z_im = 2 * v_Z_re * v_Z_im + v_c_im;
             v_Z_re = v_Z_re2 - v_Z_im2 + v_c_re;
             v_n++;

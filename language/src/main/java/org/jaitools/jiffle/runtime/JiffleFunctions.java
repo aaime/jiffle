@@ -472,6 +472,16 @@ public class JiffleFunctions {
         }
         return dvalues;
     }
-    
+
+    /**
+     * Returns true if x is non zero and non null
+     * @return
+     */
+    public boolean isTrue(Double x) {
+        if (!Double.isNaN(x)) {
+            return acompare(x, 0) != 0;
+        }
+        return false;
+    }
 }
 

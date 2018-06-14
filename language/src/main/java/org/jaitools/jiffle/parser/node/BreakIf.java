@@ -9,8 +9,8 @@ public class BreakIf implements Statement {
     }
 
     public void write(SourceWriter w) {
-        w.indent().append("if (_FN.sign(");
+        w.indent().append("if (_FN.isTrue(");
         condition.write(w);
-        w.append(") == 1) break;").line();
+        w.append(")) break;").line();
     }
 }

@@ -54,6 +54,11 @@ public abstract class RuntimeTestBase {
     
     protected Map<String, Jiffle.ImageRole> imageParams;
     protected JiffleDirectRuntime runtimeInstance;
+    
+    static {
+        System.setProperty("org.codehaus.janino.source_debugging.enable", "true");
+        System.setProperty("org.codehaus.janino.source_debugging.dir", System.getProperty("java.io.tmpdir"));
+    }
 
     public abstract class Evaluator {
         int x = 0;

@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @author michael
  */
-public class StatementList implements Node {
+public class StatementList implements Statement {
     
     private final List<Statement> stmts;
 

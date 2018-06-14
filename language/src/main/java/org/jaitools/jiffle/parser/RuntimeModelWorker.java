@@ -78,6 +78,7 @@ import org.jaitools.jiffle.parser.node.Expression;
 import org.jaitools.jiffle.parser.node.FunctionCall;
 import org.jaitools.jiffle.parser.node.GetSourceValue;
 import org.jaitools.jiffle.parser.node.GlobalVars;
+import org.jaitools.jiffle.parser.node.IfElse;
 import org.jaitools.jiffle.parser.node.ImagePos;
 import org.jaitools.jiffle.parser.node.IntLiteral;
 import org.jaitools.jiffle.parser.node.Node;
@@ -645,5 +646,16 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
 
     public Script getScriptNode() {
         return this.script;
+    }
+
+    @Override public void exitIfStmt(JiffleParser.IfStmtContext ctx) {
+        Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
+        List<StatementContext> statements = ctx.statement();
+        Statement ifBlock = getAsType(statements.get(0), Statement.class);
+        Statement elseBlock = null;
+        if (statements.size() > 1) {
+            elseBlock = getAsType(statements.get(1), Statement.class);
+        };
+        set(ctx, new IfElse(condition, ifBlock, elseBlock));
     }
 }

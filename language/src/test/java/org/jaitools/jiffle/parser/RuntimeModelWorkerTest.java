@@ -18,7 +18,7 @@ import java.io.InputStream;
 public class RuntimeModelWorkerTest {
     
     @Test
-    public void foo() throws Exception {
+    public void mandelbrot() throws Exception {
         assertGeneratedSource("mandelbrot.jfl", RuntimeModel.DIRECT, "result");
         assertGeneratedSource("mandelbrot.jfl", RuntimeModel.INDIRECT, "result");
     }

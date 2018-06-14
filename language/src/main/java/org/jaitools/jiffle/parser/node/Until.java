@@ -18,9 +18,9 @@ public class Until implements Statement {
     }
 
     public void write(SourceWriter w) {
-        w.indent().append("while (_FN.sign(");
+        w.indent().append("while (!_FN.isTrue(");
         condition.write(w);
-        w.append(") == 0) {\n");
+        w.append(")) {\n");
         w.inc();
         stmts.write(w);
         w.dec();
