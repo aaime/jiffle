@@ -46,8 +46,14 @@ public class ConFunction extends Expression {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        String[] argStrs = new String[args.length];
+
+        int i = 0;
+        for (Expression arg : args) {
+            argStrs[i++] = w.writeToString(arg);
+        }
+
+        w.append(DirectSources.conCall(argStrs));
     }
     
     

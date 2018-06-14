@@ -23,7 +23,14 @@ public class ImagePos implements Node {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        if (pixel != null) {
+            w.append(pixel);
+            if (band != null) {
+                w.append(", ");
+            }
+        }
+        if (band != null) {
+            w.append(band);
+        } 
     }
 }

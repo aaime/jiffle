@@ -28,8 +28,7 @@ package org.jaitools.jiffle;
 import java.util.List;
 
 /**
- * Exception class for errors encountered while compiling a script or
- * working with runtime objects.
+ * Exception class for errors encountered while working with runtime objects.
  * 
  * @author Michael Bedward
  * @since 0.1

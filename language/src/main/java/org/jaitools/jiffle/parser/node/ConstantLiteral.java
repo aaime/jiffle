@@ -26,7 +26,7 @@ public class ConstantLiteral extends ScalarLiteral {
     
     public static ConstantLiteral nanValue() { 
         return new ConstantLiteral(
-                String.valueOf(ConstantLookup.getValue("NAN")) ); 
+                String.valueOf("Double.NaN")); 
     }
     
     

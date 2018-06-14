@@ -25,6 +25,8 @@
 
 package org.jaitools.jiffle.parser;
 
+import org.jaitools.jiffle.JiffleException;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -130,7 +132,7 @@ public abstract class SymbolScope {
         } else if (enclosingScope != null) {
             return enclosingScope.get(name);
         } else {
-            throw new IllegalArgumentException(
+            throw new JiffleParserException(
                     "Unknown symbol " + name + " in scope " + getName());
         }
     }

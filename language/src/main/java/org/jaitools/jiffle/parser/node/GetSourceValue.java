@@ -29,7 +29,6 @@ public class GetSourceValue extends Expression {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        w.append("readFromImage(\"").append(varName).append("\", ").append(pos).append(")");
     }
 }

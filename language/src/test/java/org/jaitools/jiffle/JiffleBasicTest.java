@@ -30,6 +30,7 @@ import java.net.URL;
 import java.util.Map;
 
 import org.jaitools.CollectionFactory;
+import org.jaitools.jiffle.parser.JiffleParserException;
 import org.jaitools.jiffle.runtime.JiffleRuntime;
 
 import org.junit.Before;
@@ -133,7 +134,7 @@ public class JiffleBasicTest {
         assertTrue(jiffle.isCompiled());
     }
 
-    @Test(expected=JiffleException.class)
+    @Test(expected=JiffleParserException.class)
     public void compileInvalidScriptThrowsException() throws Exception {
         System.out.println("   compile invalid script and get exception");
         
@@ -159,7 +160,7 @@ public class JiffleBasicTest {
         
         try {
             jiffle.compile();
-        } catch (JiffleException ignored) {}
+        } catch (JiffleParserException ignored) {}
         
         assertFalse(jiffle.isCompiled());
     }

@@ -34,8 +34,7 @@ public class Pixel implements Node {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+       w.append(x).append(", ").append(y);
     }
 
 

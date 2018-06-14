@@ -78,7 +78,7 @@ public class Script extends AbstractNode {
         w.line("initImageScopeVars();");
         w.dec();
         w.line("}");
-        w.line("_stk.clear()");
+        w.line("_stk.clear();");
         // the actual script
         w.line();
         stmts.write(w);
