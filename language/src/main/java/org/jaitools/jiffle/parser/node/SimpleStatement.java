@@ -20,6 +20,6 @@ public class SimpleStatement implements Statement {
         w.indent();
         expr.write(w);
         w.append(";");
-        w.line();
+        w.newLine();
     }
 }

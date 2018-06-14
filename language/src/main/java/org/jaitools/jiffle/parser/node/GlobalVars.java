@@ -28,16 +28,24 @@ public class GlobalVars extends AbstractNode {
     @Override
     public void write(SourceWriter writer) {
         for (BinaryExpression init : inits) {
-            writer.indent();
-            init.write(writer);
-            writer.append(";");
-            writer.line();
+            init.writeDefaultValue(writer);
         }
     }
 
     public void writeFields(SourceWriter w) {
         for (BinaryExpression init : inits) {
             init.writeDeclaration(w);
+        }
+    }
+
+    public void listNames(SourceWriter w) {
+        for(int i = 0; i < inits.size(); i++) {
+            w.append("\"");
+            inits.get(i).appendName(w);
+            w.append("\"");
+            if (i < inits.size() - 1) {
+                w.append(", ");
+            }
         }
     }
 }

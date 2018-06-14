@@ -14,7 +14,7 @@ public class IfElse implements Statement {
 
     @Override
     public void write(SourceWriter w) {
-        w.indent().append("if (_FN.isTrue(").append(condition).append(")) {").line();
+        w.indent().append("if (_FN.isTrue(").append(condition).append(")) {").newLine();
         w.inc();
         ifStatement.write(w);
         w.dec();

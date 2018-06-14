@@ -21,7 +21,7 @@ public class Script extends AbstractNode {
         // class header
         String packageName = "org.jaitools.jiffle.runtime";
         w.line("package " + packageName + ";");
-        w.line();
+        w.newLine();
 
         // add the script source, if available
         String script = w.getScript();
@@ -31,7 +31,7 @@ public class Script extends AbstractNode {
             w.line(" * Java runtime class generated from the following Jiffle script: ");
             w.line(" *<code>");
             for (String line : lines) {
-                w.append(" * ").append(line).line();
+                w.append(" * ").append(line).newLine();
             }
             w.line(" *</code>");
             w.line(" */");
@@ -39,17 +39,27 @@ public class Script extends AbstractNode {
 
         // class declaration
         String template = "public class %s extends %s {";
+        String className;
         Jiffle.RuntimeModel model = w.getRuntimeModel();
         if (model == Jiffle.RuntimeModel.DIRECT) {
-            w.line(format(template, "JiffleDirectRuntimeImpl", w.getBaseClassName()));
+            className = "JiffleDirectRuntimeImpl";
         } else {
-            w.line(format(template, "JiffleIndirectRuntimeImpl", w.getBaseClassName())); 
+            className = "JiffleIndirectRuntimeImpl"; 
         }
+        w.line(format(template, className, w.getBaseClassName()));
         // writing class fields
         w.inc();
-        w.line("boolean _imageScopeVarsInitialized = false;");
         globals.writeFields(w);
-        w.line();
+        w.newLine();
+        // adding the constructor
+        w.indent().append("public ").append(className).append("() {").newLine();
+        w.inc();
+        w.indent().append("super(new String[] {");
+        globals.listNames(w);
+        w.append("});").newLine();
+        w.dec();
+        w.line("}");
+        w.newLine();
         // and field initializer method
         w.line("protected void initImageScopeVars() {");
         w.inc();
@@ -57,7 +67,7 @@ public class Script extends AbstractNode {
         w.line("_imageScopeVarsInitialized = true;");
         w.dec();
         w.line("}");
-        w.line();
+        w.newLine();
         // the evaluate method
         if (model == Jiffle.RuntimeModel.DIRECT) {
             w.line("public void evaluate(double _x, double _y) {");
@@ -80,7 +90,7 @@ public class Script extends AbstractNode {
         w.line("}");
         w.line("_stk.clear();");
         // the actual script
-        w.line();
+        w.newLine();
         stmts.write(w);
         // closing eval
         w.dec();

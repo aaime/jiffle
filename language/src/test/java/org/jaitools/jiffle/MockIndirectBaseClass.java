@@ -40,6 +40,11 @@ import org.jaitools.jiffle.runtime.JiffleIndirectRuntime;
 public abstract class MockIndirectBaseClass 
         extends AbstractJiffleRuntime implements JiffleIndirectRuntime {
 
+
+    public MockIndirectBaseClass(String[] variables) {
+        super(variables);
+    }
+
     public void setSourceImage(String imageName) {
         throw new UnsupportedOperationException("Should not be called");
     }

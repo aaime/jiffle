@@ -1,23 +1,40 @@
 package org.jaitools.jiffle.runtime;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
-    boolean _imageScopeVarsInitialized = false;
-    double v_MaxIter;
-    double v_MinRe;
-    double v_MaxRe;
-    double v_MinIm;
-    double v_MaxIm;
-    double v_Re_scale;
-    double v_Im_scale;
+    double v_MaxIter = Double.NaN;
+    double v_MinRe = Double.NaN;
+    double v_MaxRe = Double.NaN;
+    double v_MinIm = Double.NaN;
+    double v_MaxIm = Double.NaN;
+    double v_Re_scale = Double.NaN;
+    double v_Im_scale = Double.NaN;
+
+    public JiffleDirectRuntimeImpl() {
+        super(new String[] {"MaxIter", "MinRe", "MaxRe", "MinIm", "MaxIm", "Re_scale", "Im_scale"});
+    }
 
     protected void initImageScopeVars() {
-        v_MaxIter = 30;
-        v_MinRe = - 2.0;
-        v_MaxRe = 1.0;
-        v_MinIm = - 1.2;
-        v_MaxIm = v_MinIm + (v_MaxRe - v_MinRe) * getHeight() / getWidth();
-        v_Re_scale = (v_MaxRe - v_MinRe) / (getWidth() - 1);
-        v_Im_scale = (v_MaxIm - v_MinIm) / (getHeight() - 1);
+        if (Double.isNaN(v_MaxIter)) {
+            v_MaxIter = 30;
+        }
+        if (Double.isNaN(v_MinRe)) {
+            v_MinRe = - 2.0;
+        }
+        if (Double.isNaN(v_MaxRe)) {
+            v_MaxRe = 1.0;
+        }
+        if (Double.isNaN(v_MinIm)) {
+            v_MinIm = - 1.2;
+        }
+        if (Double.isNaN(v_MaxIm)) {
+            v_MaxIm = v_MinIm + (v_MaxRe - v_MinRe) * getHeight() / getWidth();
+        }
+        if (Double.isNaN(v_Re_scale)) {
+            v_Re_scale = (v_MaxRe - v_MinRe) / (getWidth() - 1);
+        }
+        if (Double.isNaN(v_Im_scale)) {
+            v_Im_scale = (v_MaxIm - v_MinIm) / (getHeight() - 1);
+        }
         _imageScopeVarsInitialized = true;
     }
 

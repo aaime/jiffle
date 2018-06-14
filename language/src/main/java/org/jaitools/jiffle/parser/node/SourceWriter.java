@@ -95,7 +95,7 @@ public class SourceWriter {
         return indentation;
     }
 
-    public void line() {
+    public void newLine() {
         sb.append("\n");
     }
 

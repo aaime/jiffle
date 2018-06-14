@@ -45,6 +45,10 @@ import org.jaitools.jiffle.runtime.JiffleProgressListener;
 public abstract class MockDirectBaseClass 
         extends AbstractJiffleRuntime implements JiffleDirectRuntime {
 
+    public MockDirectBaseClass(String[] variables) {
+        super(variables);
+    }
+
     public void setDefaultBounds() {
         throw new UnsupportedOperationException("Should not be called");
     }

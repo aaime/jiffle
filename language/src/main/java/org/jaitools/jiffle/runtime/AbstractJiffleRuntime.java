@@ -25,6 +25,7 @@
 package org.jaitools.jiffle.runtime;
 
 import java.awt.geom.Rectangle2D;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,10 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
 
     /** Flags whether bounds and pixel dimensions have been set. */
     private boolean _worldSet;
+    
+    private String[] _variableNames;
+    
+    protected boolean _imageScopeVarsInitialized = false;
     
     /** Number of pixels calculated from bounds and pixel dimensions. */
     private long _numPixels;
@@ -114,18 +119,6 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     // Used to size / resize the _vars array as required
     private static final int VAR_ARRAY_CHUNK = 100;
     
-    /** Image-scope variables. */
-    protected ImageScopeVar[] _vars = new ImageScopeVar[VAR_ARRAY_CHUNK];
-    
-    /** Whether the image-scope variables have been initialized. */
-    protected boolean _imageScopeVarsInitialized;
-
-    /** The number of image-scope variables defined. */
-    protected int _numVars;
-    
-    /** Advertizes the image-scope variable getter syntax to source generators. */
-    public static final String VAR_STRING = "_vars[_VAR_].value";
-    
     /** Whether the <i>outside</i> option is set. */
     protected boolean _outsideValueSet;
     
@@ -145,17 +138,23 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      */
     protected final JiffleFunctions _FN;
 
+    public AbstractJiffleRuntime() {
+        this(new String[0]);
+    }
+
     /**
      * Creates a new instance of this class and initializes its 
      * {@link JiffleFunctions} and {@link IntegerStack} objects.
      */
-    public AbstractJiffleRuntime() {
+    public AbstractJiffleRuntime(String[] variableNames) {
         _FN = new JiffleFunctions();
         _stk = new IntegerStack();
         
         _transformLookup = new HashMap<String, TransformInfo>();
         _xres = Double.NaN;
         _yres = Double.NaN;
+        
+        _variableNames = variableNames;
     }
     
     /**
@@ -234,32 +233,53 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * {@inheritDoc}
      */
     public Double getVar(String varName) {
-        int index = getVarIndex(varName);
-        if (index < 0) {
+        Field field = getVariableField(varName);
+        if (field == null) {
             return null;
         }
-        
-        return _vars[index].isSet ? _vars[index].value : null; 
+
+        try {
+            field.setAccessible(true);
+            return field.getDouble(this);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected Field getVariableField(String varName) {
+        try {
+            return getClass().getDeclaredField("v_" + varName);
+        } catch (NoSuchFieldException e) {
+            return null;
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void setVar(String varName, Double value) throws JiffleRuntimeException {
-        int index = getVarIndex(varName);
-        if (index < 0) {
+        Field field = getVariableField(varName);
+        if (field == null) {
             throw new JiffleRuntimeException("Undefined variable: " + varName);
         }
-        setVarValue(index, value);
+        try {
+            field.setAccessible(true);
+            field.setDouble(this, value == null ? Double.NaN : value);
+            if (value == null) {
+                _imageScopeVarsInitialized = false;
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     /**
      * {@inheritDoc}
      */
     public String[] getVarNames() {
-        String[] names = new String[_numVars];
-        for (int i = 0; i < _numVars; i++) {
-            names[i] = _vars[i].name;
+        String[] names = new String[_variableNames.length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = _variableNames[i];
         }
         return names;
     }
@@ -397,47 +417,6 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     }
 
     /**
-     * Sets the value of an image-scope variable. If {@code value} is {@code null}
-     * the variable is set to its default value if one is defined, otherwise an
-     * exception is thrown.
-     * 
-     * @param index variable index
-     * @param value the new value or {@code null} for default value
-     * @throws JiffleRuntimeException if {@code value} is {@code null} but no default
-     *         value is defined for the variable
-     */
-    protected void setVarValue(int index, Double value) throws JiffleRuntimeException {
-        if (value == null) {
-            if (!_vars[index].hasDefaultValue) {
-                throw new JiffleRuntimeException(
-                        "Value cannot be null for variable with no default: " + _vars[index].name);
-            }
-            
-            _imageScopeVarsInitialized = false;
-            _vars[index].isSet = false;
-            
-        } else {
-            _vars[index].value = value;
-            _vars[index].isSet = true;
-        }
-    }
-
-    /**
-     * Gets the index for an image-scope variable by name.
-     * 
-     * @param varName variable name
-     * @return the index or -1 if the name is not found
-     */
-    protected int getVarIndex(String varName) {
-        for (int i = 0; i < _numVars; i++) {
-            if (_vars[i].name.equals(varName)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
      * Initializes image-scope variables. These are fields in the runtime class.
      * They are initialized in a separate method rather than the constructor
      * because they may depend on expressions involving values which are not
@@ -446,64 +425,14 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * @throws JiffleRuntimeException if any variables do not have either a
      *         default or provided value
      */
-    protected void initImageScopeVars() {
-        for (int i = 0; i < _numVars; i++) {
-            if (!_vars[i].isSet) {
-                Double value = getDefaultValue(i);
-                if (value == null) {
-                    throw new JiffleRuntimeException(
-                            "No default value set for " + _vars[i].name);
-                }
-                _vars[i].value = value;
-                _vars[i].isSet = true;
-            }
-        }
-        _imageScopeVarsInitialized = true;
-    }
+    protected abstract void initImageScopeVars();
     
-    /**
-     * Gets the default value for an image-scope variable. This method is 
-     * overridden as part of the generated run-time class code.
-     * 
-     * @param index the index of the variable
-     * @return the default value or {@code null} if one is not defined
-     */
-    protected Double getDefaultValue(int index) {
-        return null;
-    }
-
     /**
      * Initializes runtime class fields related to Jiffle script options.
      */
     protected void initOptionVars() {
         
     };
-
-    /**
-     * Registers a variable as having image scope.
-     * 
-     * @param name variable name
-     * @param hasDefault whether the variable has a default value
-     */
-    protected void registerVar(String name, boolean hasDefault) {
-        // check that the variable is not already registered
-        if (getVarIndex(name) >= 0) {
-            throw new JiffleRuntimeException("Variable already defined: " + name);
-        }
-        
-        _numVars++ ;
-        ImageScopeVar var = new ImageScopeVar(name, hasDefault);
-        if (_numVars > _vars.length) {
-            growVarsArray();
-        }
-        _vars[_numVars - 1] = var;
-    }
-    
-    private void growVarsArray() {
-        ImageScopeVar[] temp = _vars;
-        _vars = new ImageScopeVar[_vars.length + VAR_ARRAY_CHUNK];
-        System.arraycopy(temp, 0, _vars, 0, temp.length);
-    }
 
     /**
      * Helper for {@link #setWorldByNumPixels(Rectangle2D, int, int)} and

@@ -16,12 +16,11 @@ public class Variable extends Expression {
 
     @Override
     public String toString() {
-        return "v_" + name;
+        return name;
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        w.append("v_").append(name);
     }
     
 }

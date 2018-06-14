@@ -51,7 +51,8 @@ public abstract class AbstractIndirectRuntime extends AbstractJiffleRuntime impl
     /**
      * Creates a new instance and initializes script-option variables.
      */
-    public AbstractIndirectRuntime() {
+    public AbstractIndirectRuntime(String[] variableNames) {
+        super(variableNames);
         initOptionVars();
     }
 

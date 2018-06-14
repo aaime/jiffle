@@ -49,6 +49,7 @@ public class MockJiffleRuntime extends AbstractDirectRuntime {
      * @param pixelTime time to spend pretending to process each pixel
      */
     public MockJiffleRuntime(int imageSize, long pixelTime) {
+        super(new String[0]);
         this.pixelTime = pixelTime;
         setWorldByResolution(new Rectangle(0, 0, imageSize, 1), 1, 1);
     }
@@ -95,8 +96,4 @@ public class MockJiffleRuntime extends AbstractDirectRuntime {
         }
     }
 
-    @Override
-    protected Double getDefaultValue(int index) {
-        return null;
-    }
 }

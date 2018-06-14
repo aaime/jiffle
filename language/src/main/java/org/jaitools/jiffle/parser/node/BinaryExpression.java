@@ -100,11 +100,40 @@ public class BinaryExpression extends Expression {
         return left.getType() == JiffleType.D ? "double" : "List";
     }
 
+    private String getInitialValue() {
+        return left.getType() == JiffleType.D ? "Double.NaN" : "null";
+    }
+
     public void writeDeclaration(SourceWriter w) {
         if (left instanceof Variable) {
             String type = getJavaType();
-            w.line(type + " " + left + ";");
+            String initialValue = getInitialValue();
+            w.indent()
+                    .append(type)
+                    .append(" ")
+                    .append(left)
+                    .append(" = ")
+                    .append(initialValue)
+                    .append(";")
+                    .newLine();
         }
+    }
+
+    public void appendName(SourceWriter w) {
+        if (left instanceof Variable) {
+            w.append(left.toString());
+        }
+    }
+
+    public void writeDefaultValue(SourceWriter w) {
+        if (!(left instanceof Variable)) {
+            throw new IllegalStateException("Cannot write default value unless this is a declaration");
+        }
+        w.indent().append("if (Double.isNaN(").append(left).append(")) {").newLine();
+        w.inc();
+        w.indent().append(this).append(";").newLine();
+        w.dec();
+        w.line("}");
     }
 
 }

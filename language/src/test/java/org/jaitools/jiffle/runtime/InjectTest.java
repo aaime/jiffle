@@ -32,6 +32,8 @@ import org.jaitools.CollectionFactory;
 import org.jaitools.imageutils.ImageUtils;
 import org.jaitools.jiffle.Jiffle;
 
+import org.jaitools.jiffle.JiffleException;
+import org.jaitools.jiffle.parser.JiffleParserException;
 import org.junit.Test;
 
 /**
@@ -57,13 +59,13 @@ public class InjectTest extends RuntimeTestBase {
     public void varWithNoDefault() throws Exception {
         System.out.println("   inject value for var with no default");
         String script = 
-                  "init { n; } \n"
+                  "init { n = 0; } \n"
                 + "dest = n;" ;
 
         testScriptWithValue(script, 42.0);
     }
 
-    @Test(expected=JiffleRuntimeException.class)
+    @Test(expected=JiffleException.class)
     public void neglectVarWithNoDefault() throws Exception {
         System.out.println("   unset var with no default gives exception");
         String script = 
@@ -107,7 +109,7 @@ public class InjectTest extends RuntimeTestBase {
     public void repeatedSetting() throws Exception {
         System.out.println("   repeated setting of var");
         String script = 
-                  "init { n; } \n"
+                  "init { n = 0; } \n"
                 + "dest = n;" ;
         
         JiffleDirectRuntime runtime = getRuntime(script);
@@ -122,7 +124,6 @@ public class InjectTest extends RuntimeTestBase {
         testInject(runtime, value);
     }
             
-
     private JiffleDirectRuntime getRuntime(String script) throws Exception {
         Jiffle jiffle = new Jiffle();
         jiffle.setScript(script);

@@ -11,6 +11,6 @@ public class BreakIf implements Statement {
     public void write(SourceWriter w) {
         w.indent().append("if (_FN.isTrue(");
         condition.write(w);
-        w.append(")) break;").line();
+        w.append(")) break;").newLine();
     }
 }
