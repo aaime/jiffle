@@ -475,7 +475,9 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     /**
      * Initializes runtime class fields related to Jiffle script options.
      */
-    protected abstract void initOptionVars();
+    protected void initOptionVars() {
+        
+    };
 
     /**
      * Registers a variable as having image scope.

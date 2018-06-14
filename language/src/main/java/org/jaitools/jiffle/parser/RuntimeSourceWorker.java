@@ -69,6 +69,7 @@ import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.Jiffle.RuntimeModel;
 import org.jaitools.jiffle.parser.node.Band;
 import org.jaitools.jiffle.parser.node.BinaryExpression;
+import org.jaitools.jiffle.parser.node.BreakIf;
 import org.jaitools.jiffle.parser.node.ConFunction;
 import org.jaitools.jiffle.parser.node.ConstantLiteral;
 import org.jaitools.jiffle.parser.node.DefaultScalarValue;
@@ -79,14 +80,13 @@ import org.jaitools.jiffle.parser.node.GetSourceValue;
 import org.jaitools.jiffle.parser.node.GlobalVars;
 import org.jaitools.jiffle.parser.node.ImagePos;
 import org.jaitools.jiffle.parser.node.IntLiteral;
-import org.jaitools.jiffle.parser.node.ListVar;
 import org.jaitools.jiffle.parser.node.Node;
 import org.jaitools.jiffle.parser.node.NodeException;
 import org.jaitools.jiffle.parser.node.ParenExpression;
 import org.jaitools.jiffle.parser.node.Pixel;
 import org.jaitools.jiffle.parser.node.PostfixUnaryExpression;
 import org.jaitools.jiffle.parser.node.PrefixUnaryExpression;
-import org.jaitools.jiffle.parser.node.ScalarVar;
+import org.jaitools.jiffle.parser.node.Variable;
 import org.jaitools.jiffle.parser.node.Script;
 import org.jaitools.jiffle.parser.node.SetDestValue;
 import org.jaitools.jiffle.parser.node.SimpleStatement;
@@ -96,7 +96,11 @@ import org.jaitools.jiffle.parser.node.Until;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Generates Java sources for the runtime class.
@@ -104,10 +108,39 @@ import java.util.List;
  * @author michael
  */
 public class RuntimeSourceWorker extends PropertyWorker<Node> {
+
+    /**
+     * A key for the declared variables set
+     */
+    private static class VariableKey {
+        SymbolScope scope;
+        String name;
+
+        public VariableKey(SymbolScope scope, String name) {
+            this.scope = scope;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            VariableKey that = (VariableKey) o;
+            return Objects.equals(scope, that.scope) &&
+                    Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+
+            return Objects.hash(scope, name);
+        }
+    }
     
     private final TreeNodeProperties<JiffleType> types;
     private final TreeNodeProperties<SymbolScope> scopes;
     private final RuntimeModel runtimeModel;
+    private final Set<VariableKey> declaredVariables = new HashSet<>();
     
     // Set to a non-null reference if an init block is found
     private InitBlockContext initBlockContext = null;
@@ -118,13 +151,14 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
      * of the runtime code. Expects that the tree has been previously
      * annotated by an ExpressionWorker.
      */
-    public RuntimeSourceWorker(ParseTree tree, 
-            ExpressionWorker ew,
+    public RuntimeSourceWorker(ParseTree tree,
+            TreeNodeProperties<JiffleType> types,
+            TreeNodeProperties<SymbolScope> scopes,
             Jiffle.RuntimeModel runtimeModel) {
         
         super(tree);
-        this.types = ew.getProperties();
-        this.scopes = ew.getScopes();
+        this.types = types;
+        this.scopes = scopes;
         this.runtimeModel = runtimeModel;
         
         walkTree();
@@ -170,7 +204,7 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
                         value = getAsType(exprCtx, Expression.class);
                     }
 
-                    inits.add(new BinaryExpression(ASSIGN, new ScalarVar(name), value));
+                    inits.add(new BinaryExpression(ASSIGN, new Variable(name, JiffleType.D), value));
                 }
                 
             } catch (NodeException ex) {
@@ -325,7 +359,10 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
     @Override
     public void exitAssignment(AssignmentContext ctx) {
         String varName = ctx.ID().getText();
-        Symbol symbol = getScope(ctx).get(varName);
+        SymbolScope scope = getScope(ctx);
+        Symbol symbol = scope.get(varName);
+        SymbolScope declaringScope = scope.getDeclaringScope(varName);
+        boolean declare = checkAndSetDeclared(declaringScope, varName);
         
         int opType = ctx.op.getType();
         
@@ -338,11 +375,11 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
                     break;
 
                 case LIST:
-                    set(ctx, new BinaryExpression(opType, new ListVar(varName), expr));
+                    set(ctx, new BinaryExpression(opType, new Variable(varName, JiffleType.LIST), expr, declare));
                     break;
 
                 case SCALAR:
-                    set(ctx, new BinaryExpression(opType, new ScalarVar(varName), expr));
+                    set(ctx, new BinaryExpression(opType, new Variable(varName, JiffleType.D), expr, declare));
                     break;
                     
                 default:
@@ -354,7 +391,20 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
             messages.error(ctx.getStart(), ex.getError());
         }
     }
-    
+
+    /**
+     * Checks if a variable has already been declared in this scope, and if not, marks it as such
+     * @param scope
+     * @param symbol
+     * @return True if the variable still needed to be declared in this scope
+     */
+    private boolean checkAndSetDeclared(SymbolScope scope, String varName) {
+        if (scope instanceof GlobalScope) {
+            return false;
+        }
+        return declaredVariables.add(new VariableKey(scope, varName));
+    }
+
     @Override
     public void exitAtom(AtomContext ctx) {
         set( ctx, get(ctx.getChild(0)) );
@@ -462,12 +512,12 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
                 break;
                 
             case LIST:
-                set(ctx, new ListVar(name));
+                set(ctx, new Variable(name, JiffleType.LIST));
                 break;
                 
             case LOOP_VAR:
             case SCALAR:
-                set(ctx, new ScalarVar(name));
+                set(ctx, new Variable(name, JiffleType.D));
                 break;
                 
             default:  
@@ -570,6 +620,13 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
         Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
         StatementList statements = getAsType(ctx.statement(), StatementList.class);
         set(ctx, new Until(condition, statements));
+    }
+
+    @Override
+    public void exitBreakifStmt(JiffleParser.BreakifStmtContext ctx) {
+        Expression condition = getAsType(ctx.expression(), Expression.class);
+        set(ctx, new BreakIf(condition));
+        
     }
 
     @Override

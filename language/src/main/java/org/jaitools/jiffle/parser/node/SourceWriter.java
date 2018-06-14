@@ -18,7 +18,7 @@ public class SourceWriter {
      * @param node
      * @return
      */
-    public static String write(Expression node) {
+    public static String writeToString(Expression node) {
         SourceWriter sw = new SourceWriter();
         node.write(sw);
         return sw.getSource();
@@ -47,17 +47,19 @@ public class SourceWriter {
      * Writes the indentation, the line provided, and adds a newline at the end 
      * @param line
      */
-    public void line(String line) {
+    public SourceWriter line(String line) {
         String indentation = getIndentation();
         sb.append(indentation).append(line).append("\n");
+        return this;
     }
 
     /**
      * Method to add text in the source, without any indentation or newline 
      * @param line
      */
-    public void append(String text) {
+    public SourceWriter append(String text) {
         sb.append(text);
+        return this;
     }
 
     /**

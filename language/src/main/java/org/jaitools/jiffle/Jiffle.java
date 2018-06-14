@@ -30,14 +30,23 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.codehaus.janino.SimpleCompiler;
+import org.jaitools.jiffle.parser.ExpressionWorker;
 import org.jaitools.jiffle.parser.ImagesBlockWorker;
 import org.jaitools.jiffle.parser.InitBlockWorker;
 import org.jaitools.jiffle.parser.JiffleLexer;
 import org.jaitools.jiffle.parser.JiffleParser;
 import org.jaitools.jiffle.parser.JiffleParserErrorListener;
+import org.jaitools.jiffle.parser.JiffleType;
 import org.jaitools.jiffle.parser.Message;
 import org.jaitools.jiffle.parser.Messages;
 import org.jaitools.jiffle.parser.OptionsBlockWorker;
+import org.jaitools.jiffle.parser.RuntimeSourceWorker;
+import org.jaitools.jiffle.parser.SymbolScope;
+import org.jaitools.jiffle.parser.TreeNodeProperties;
+import org.jaitools.jiffle.parser.VarWorker;
+import org.jaitools.jiffle.parser.node.Script;
+import org.jaitools.jiffle.parser.node.SourceWriter;
 import org.jaitools.jiffle.runtime.JiffleDirectRuntime;
 import org.jaitools.jiffle.runtime.JiffleIndirectRuntime;
 import org.jaitools.jiffle.runtime.JiffleRuntime;
@@ -96,6 +105,9 @@ import java.util.logging.Logger;
 public class Jiffle {
     
     public static final Logger LOGGER = Logger.getLogger(Jiffle.class.getName());
+    private ParseTree tree;
+    private TreeNodeProperties<SymbolScope> scopes;
+    private TreeNodeProperties<JiffleType> properties;
 
     /** 
      * Constants for runtime model. Jiffle supports two runtime models:
@@ -369,8 +381,10 @@ public class Jiffle {
          * ignore any in the script. Otherwise, we look for an 
          * images block in the script.
          */
+        ParseTree tree = parseResult.result;
         if (imageParams.isEmpty()) {
-            Jiffle.Result<Map<String, Jiffle.ImageRole>> r = getScriptImageParams(parseResult.result);
+            Jiffle.Result<Map<String, Jiffle.ImageRole>> r = getScriptImageParams(
+                    tree);
             if (r.messages.isError()) {
                 reportMessages(r);
                 return;
@@ -383,13 +397,19 @@ public class Jiffle {
             setImageParams(r.result);
         }
 
-        reportMessages(new OptionsBlockWorker(parseResult.result).messages);
-        reportMessages(new InitBlockWorker(parseResult.result).messages);
+        // TODO: harmonize with the above!
+        OptionsBlockWorker optionsWorker = new OptionsBlockWorker(tree);
+        reportMessages(optionsWorker.messages);
+        InitBlockWorker initWorker = new InitBlockWorker(tree);
+        reportMessages(initWorker.messages);
+        VarWorker vw = new VarWorker(tree, imageParams);
+        ExpressionWorker expressionWorker = new ExpressionWorker(tree, vw);
+        reportMessages(expressionWorker.messages);
         
-        
-        if (!transformAndCheckVars()) {
-            throw new JiffleException(messagesToString());
-        }
+        // all good, record the accumulated info for source generation
+        this.tree = tree;
+        this.scopes = expressionWorker.getScopes();
+        this.properties = expressionWorker.getProperties();
     }
     
     /**
@@ -399,8 +419,7 @@ public class Jiffle {
      *         {@code false} otherwise
      */
     public boolean isCompiled() {
-        // TODO
-        return false;
+        return tree != null && properties != null && scopes != null;
     }
     
     /**
@@ -421,8 +440,7 @@ public class Jiffle {
      *         occur in creating the runtime instance
      */
     public JiffleDirectRuntime getRuntimeInstance() throws JiffleException {
-        // TODO
-        return null;
+        return (JiffleDirectRuntime) getRuntimeInstance(RuntimeModel.DIRECT);
     }
     
     /**
@@ -436,32 +454,40 @@ public class Jiffle {
      *         occur in creating the runtime instance
      */
     public JiffleRuntime getRuntimeInstance(Jiffle.RuntimeModel model) throws JiffleException {
-        // TODO
-        return null;
-    }
-    
-    /**
-     * Gets the runtime object for this script. 
-     * <p>
-     * The runtime object is an instance of {@link JiffleRuntime}. By default
-     * it extends an abstract base class supplied JAI-tools: 
-     * {@link org.jaitools.jiffle.runtime.AbstractDirectRuntime}
-     * when using the direct runtiem model or 
-     * {@link org.jaitools.jiffle.runtime.AbstractIndirectRuntime}
-     * when using the indirect model. This method allows you to
-     * specify a custom base class. The custom class must implement either 
-     * {@link JiffleDirectRuntime} or {@link JiffleIndirectRuntime}.
-     * 
-     * @param <T> the runtime base class type
-     * @param baseClass the runtime base class
-     * 
-     * @return the runtime object
-     * @throws JiffleException  if the script has not been compiled or if errors
-     *         occur in creating the runtime instance
-     */
-    public <T extends JiffleRuntime> T getRuntimeInstance(Class<T> baseClass) throws JiffleException {
-        // TODO
-        return null;
+        if (!isCompiled()) {
+            throw new JiffleException("The script has not been compiled");
+        }
+
+        String runtimeSource = getRuntimeSource(model, false);
+
+        try {
+            SimpleCompiler compiler = new SimpleCompiler();
+            compiler.cook(runtimeSource);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(JiffleProperties.get(JiffleProperties.RUNTIME_PACKAGE_KEY)).append(".");
+
+            switch (model) {
+                case DIRECT:
+                    sb.append(JiffleProperties.get(JiffleProperties.DIRECT_CLASS_KEY));
+                    break;
+
+                case INDIRECT:
+                    sb.append(JiffleProperties.get(JiffleProperties.INDIRECT_CLASS_KEY));
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Internal compiler error");
+            }
+
+            Class<?> clazz = compiler.getClassLoader().loadClass(sb.toString());
+            JiffleRuntime runtime = (JiffleRuntime) clazz.newInstance();
+            runtime.setImageParams(imageParams);
+            return runtime;
+
+        } catch (Exception ex) {
+            throw new JiffleException("Runtime source error for source: " + runtimeSource, ex);
+        }
     }
     
     /**
@@ -479,8 +505,7 @@ public class Jiffle {
     public String getRuntimeSource(boolean scriptInDocs)
             throws JiffleException {
 
-        // TODO
-        return null;
+        return getRuntimeSource(RuntimeModel.DIRECT, scriptInDocs);
     }
         
     /**
@@ -499,8 +524,15 @@ public class Jiffle {
     public String getRuntimeSource(Jiffle.RuntimeModel model, boolean scriptInDocs)
             throws JiffleException {
         
-        // TODO
-        return null;
+        if (scriptInDocs) {
+            throw new RuntimeException("Do no know how to clean the block comments yet");
+        }
+        
+        RuntimeSourceWorker worker = new RuntimeSourceWorker(tree, properties, scopes, model);
+        Script scriptNode = worker.getScriptNode();
+        SourceWriter writer = new SourceWriter();
+        scriptNode.write(writer);
+        return writer.getSource();
     }
     
     /**

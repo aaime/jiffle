@@ -1,5 +1,6 @@
 package org.jaitools.jiffle.parser.node;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -13,7 +14,7 @@ public class GlobalVars extends AbstractNode {
      * Creates an empty instance.
      */
     public GlobalVars() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        inits = Collections.emptyList();
     }
 
     /**

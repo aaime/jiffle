@@ -111,6 +111,11 @@ public class TestNodes {
     private Expression mockDExpr(final String name) {
         return new Expression(JiffleType.D) {
             @Override
+            public void write(SourceWriter w) {
+                // do nothing
+            }
+
+            @Override
             public String toString() {
                 return name;
             }

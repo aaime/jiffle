@@ -38,7 +38,19 @@ public class SetDestValue extends Expression {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        switch (runtimeModel) {
+            case DIRECT:
+                w.append("writeToImage(\"").append(destVar).append("\", _x, _y, 0, ");
+                expr.write(w);
+                w.append(")");
+                break;
+                
+            case INDIRECT:
+                w.append("return ").append(expr);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Invalid runtime model: " + runtimeModel);
+        }
     }
 }

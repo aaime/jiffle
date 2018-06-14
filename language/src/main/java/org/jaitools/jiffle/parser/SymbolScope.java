@@ -27,6 +27,7 @@ package org.jaitools.jiffle.parser;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Base class for symbol scope levels. 
@@ -53,7 +54,8 @@ public abstract class SymbolScope {
     
     /** Symbols defined within this scope, keyed by name. */
     protected final Map<String, Symbol> symbols;
-
+    
+    
     /**
      * Creates a new instance.
      * 
@@ -132,5 +134,23 @@ public abstract class SymbolScope {
                     "Unknown symbol " + name + " in scope " + getName());
         }
     }
-    
+
+    /**
+     * Searches for a symbol in this scope and, if not found,
+     * any enclosing scopes.
+     *
+     * @return the symbol
+     * @throws IllegalArgumentException if the symbol is not found
+     */
+    public SymbolScope getDeclaringScope(String name) {
+        if (symbols.containsKey(name)) {
+            return this;
+        } else if (enclosingScope != null) {
+            return enclosingScope.getDeclaringScope(name);
+        } else {
+            throw new IllegalArgumentException(
+                    "Unknown symbol " + name + " in scope " + getName());
+        }
+    }
+
 }

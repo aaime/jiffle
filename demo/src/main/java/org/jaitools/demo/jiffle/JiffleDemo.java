@@ -163,6 +163,7 @@ public class JiffleDemo extends JFrame {
             runScript(script, imageChoice.getDestImageVarName());
             
         } catch (JiffleException ex) {
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(this, 
                     "Problem loading the example script", 
                     "Bummer", JOptionPane.ERROR_MESSAGE);
@@ -179,6 +180,7 @@ public class JiffleDemo extends JFrame {
             imagePane.setImage(image);
             
         } catch (JiffleException ex) {
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(this, 
                     "Errors compiling or running the script", 
                     "Bummer", JOptionPane.ERROR_MESSAGE);

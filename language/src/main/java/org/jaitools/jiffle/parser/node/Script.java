@@ -34,19 +34,39 @@ public class Script extends AbstractNode {
             w.line(format(template, "JiffleIndirectRuntimeImpl", "AbstractIndirectRuntime")); 
         }
         w.inc();
-        
+        w.line("boolean _imageScopeVarsInitialized = false;");
         globals.writeFields(w);
         w.line();
-        w.line("protected void initOptionVars() {");
+        w.line("protected void initImageScopeVars() {");
         w.inc();
         globals.write(w);
+        w.line("_imageScopeVarsInitialized = true;");
         w.dec();
         w.line("}");
         
         w.line();
-        
-        w.line("public double evaluate(double _x, double _y) {");
+
+        if (model == Jiffle.RuntimeModel.DIRECT) {
+            w.line("public void evaluate(double _x, double _y) {");
+        } else {
+            w.line("public double evaluate(double _x, double _y) {");
+        }
         w.inc();
+
+        if (model == Jiffle.RuntimeModel.DIRECT) {
+            w.line("if (!isWorldSet()) {");
+            w.inc();
+            w.line("setDefaultBounds();");
+            w.dec();
+            w.line("}");
+        }
+
+        w.line("if (!_imageScopeVarsInitialized) {");
+        w.inc();
+        w.line("initImageScopeVars();");
+        w.dec();
+        w.line("}");
+        w.line();
         stmts.write(w);
         w.dec();
         w.line("}");

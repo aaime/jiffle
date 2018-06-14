@@ -53,7 +53,17 @@ public class FunctionCall extends Expression {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        w.append(runtimeName);
+        if (!proxy) {
+            w.append("(");
+            for (int i = 0; i <args.length; i++) {
+               Expression arg = args[i];
+               arg.write(w);
+               if (i < args.length - 1) {
+                   w.append(", ");
+               }
+            }
+            w.append(")");
+        }
     }
 }

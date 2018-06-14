@@ -1,7 +1,5 @@
 package org.jaitools.jiffle.parser.node;
 
-import javax.swing.*;
-
 public class Until implements Statement {
 
     private final Expression condition;
@@ -20,9 +18,9 @@ public class Until implements Statement {
     }
 
     public void write(SourceWriter w) {
-        w.indent().append("while(");
+        w.indent().append("while (_FN.sign(");
         condition.write(w);
-        w.append(" == 0) {\n");
+        w.append(") == 0) {\n");
         w.inc();
         stmts.write(w);
         w.dec();

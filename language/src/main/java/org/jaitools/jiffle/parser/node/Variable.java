@@ -6,11 +6,11 @@ import org.jaitools.jiffle.parser.JiffleType;
  *
  * @author michael
  */
-public class ScalarVar extends Expression {
+public class Variable extends Expression {
     private final String name;
 
-    public ScalarVar(String name) {
-        super(JiffleType.D);
+    public Variable(String name, JiffleType d) {
+        super(d);
         this.name = name;
     }
 

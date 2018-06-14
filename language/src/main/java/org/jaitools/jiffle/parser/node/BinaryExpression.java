@@ -9,16 +9,16 @@ import org.jaitools.jiffle.parser.JiffleType;
  * @author michael
  */
 public class BinaryExpression extends Expression {
-    
+
     public static enum Operator {
 
         PLUS(JiffleParser.PLUS, "%s + %s"),
         MINUS(JiffleParser.MINUS, "%s - %s"),
         TIMES(JiffleParser.TIMES, "%s * %s"),
         DIV(JiffleParser.DIV, "%s / %s"),
-        MOD(JiffleParser.MOD, "%s ^ %s"),
+        MOD(JiffleParser.MOD, "%s %% %s"),
         
-        POW(JiffleParser.POW, "math.pow(%s, %s)"),
+        POW(JiffleParser.POW, "Math.pow(%s, %s)"),
         
         ASSIGN(JiffleParser.ASSIGN, "%s = %s"),
         PLUSEQ(JiffleParser.PLUSEQ, "%s += %s"),
@@ -50,8 +50,8 @@ public class BinaryExpression extends Expression {
             return fmt;
         }
     }
-        
-    
+
+    private final boolean declarationNeeded;
     private final Expression left;
     private final Expression right;
     private final Operator op;
@@ -66,7 +66,12 @@ public class BinaryExpression extends Expression {
         }
     }
 
-    public BinaryExpression(int opCode, Expression left, Expression right) 
+    public BinaryExpression(int opCode, Expression left, Expression right)
+            throws NodeException {
+        this(opCode, left, right, false);
+    }
+
+    public BinaryExpression(int opCode, Expression left, Expression right, boolean declarationNeeded) 
             throws NodeException {
         
         super(getReturnType(left, right));
@@ -78,19 +83,27 @@ public class BinaryExpression extends Expression {
 
         this.left = left;
         this.right = right;
+        this.declarationNeeded = declarationNeeded;
     }
 
     public void write(SourceWriter w) {
-        String leftCode = SourceWriter.write(left);
-        String rightCode = SourceWriter.write(right);
+        if (declarationNeeded && left instanceof Variable) {
+            String type = getJavaType();
+            w.append(type).append(" ");
+        }
+        String leftCode = SourceWriter.writeToString(left);
+        String rightCode = SourceWriter.writeToString(right);
         w.append(String.format(op.getFormat(), leftCode, rightCode));
     }
 
+    private String getJavaType() {
+        return left.getType() == JiffleType.D ? "double" : "List";
+    }
+
     public void writeDeclaration(SourceWriter w) {
-        if (left instanceof ScalarVar) {
-            w.line("Double " + left + ";");
-        } else {
-            w.line("List " + left + ";");
+        if (left instanceof Variable) {
+            String type = getJavaType();
+            w.line(type + " " + left + ";");
         }
     }
 
