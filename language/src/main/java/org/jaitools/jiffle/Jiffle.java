@@ -453,11 +453,45 @@ public class Jiffle {
      *         occur in creating the runtime instance
      */
     public JiffleRuntime getRuntimeInstance(Jiffle.RuntimeModel model) throws JiffleException {
+        return createRuntimeInstance(model, getRuntimeBaseClass(model), false);
+    }
+
+    /**
+     * Gets the runtime object for this script. 
+     * <p>
+     * The runtime object is an instance of {@link JiffleRuntime}. By default
+     * it extends an abstract base class supplied JAI-tools: 
+     * {@link org.jaitools.jiffle.runtime.AbstractDirectRuntime}
+     * when using the direct runtiem model or 
+     * {@link org.jaitools.jiffle.runtime.AbstractIndirectRuntime}
+     * when using the indirect model. This method allows you to
+     * specify a custom base class. The custom class must implement either 
+     * {@link JiffleDirectRuntime} or {@link JiffleIndirectRuntime}.
+     *
+     * @param <T> the runtime base class type
+     * @param baseClass the runtime base class
+     *
+     * @return the runtime object
+     * @throws JiffleException  if the script has not been compiled or if errors
+     *         occur in creating the runtime instance
+     */
+
+    public <T extends JiffleRuntime> T getRuntimeInstance(Class<T> baseClass) throws JiffleException {
+        RuntimeModel model = RuntimeModel.get(baseClass);
+        if (model == null) {
+            throw new JiffleException(baseClass.getName() +
+                    " does not implement a required Jiffle runtime interface");
+        }
+
+        return (T) createRuntimeInstance(model, baseClass, false);
+    }
+
+    private JiffleRuntime createRuntimeInstance(RuntimeModel model, Class<? extends JiffleRuntime> runtimeClass, boolean scriptInDocs) throws JiffleException {
         if (!isCompiled()) {
             throw new JiffleException("The script has not been compiled");
         }
 
-        String runtimeSource = getRuntimeSource(model, false);
+        String runtimeSource = createRuntimeSource(model, runtimeClass.getName(), scriptInDocs);
 
         try {
             SimpleCompiler compiler = new SimpleCompiler();
@@ -488,7 +522,7 @@ public class Jiffle {
             throw new JiffleException("Runtime source error for source: " + runtimeSource, ex);
         }
     }
-    
+
     /**
      * Gets a copy of the Java source for the runtime class. The 
      * script must have been compiled before calling this method.
@@ -522,13 +556,32 @@ public class Jiffle {
      */
     public String getRuntimeSource(Jiffle.RuntimeModel model, boolean scriptInDocs)
             throws JiffleException {
+        return createRuntimeSource(model, getRuntimeBaseClass(model).getName(), scriptInDocs);
+    }
+
+    private Class<? extends JiffleRuntime> getRuntimeBaseClass(RuntimeModel model) {
+        Class<? extends JiffleRuntime> baseClass = null;
+        switch (model) {
+            case DIRECT:
+                baseClass = JiffleProperties.DEFAULT_DIRECT_BASE_CLASS;
+                break;
+
+            case INDIRECT:
+                baseClass = JiffleProperties.DEFAULT_INDIRECT_BASE_CLASS;
+                break;
+        }
         
+        return baseClass;
+    }
+
+    private String createRuntimeSource(RuntimeModel model, String baseClassName, boolean scriptInDocs) {
         if (scriptInDocs) {
             throw new RuntimeException("Do no know how to clean the block comments yet");
         }
-        
+
         SourceWriter writer = new SourceWriter(model);
         writer.setScript(stripComments(theScript));
+        writer.setBaseClassName(baseClassName);
         scriptModel.write(writer);
         return writer.getSource();
     }
@@ -614,48 +667,6 @@ public class Jiffle {
         }
     }
 
-    /**
-     * Transforms variable tokens to specific types and does some basic
-     * error checking.
-     *  
-     * @return {@code true} if no errors; {@code false} otherwise
-     * @throws JiffleException on unintercepted parser errors
-     */
-    private boolean transformAndCheckVars() throws JiffleException {
-        // TODO
-        return true;
-    }
-
-    /**
-     * Creates an instance of the runtime class. The Java source for the
-     * class is created if not already cached and then compiled using
-     * Janino's {@link SimpleCompiler}.
-     * 
-     * @throws Exception 
-     */
-    private JiffleRuntime createRuntimeInstance(Jiffle.RuntimeModel model,
-            Class<? extends JiffleRuntime> baseClass) throws JiffleException {
-        
-        // TODO
-        return null;
-    }
-    
-    /**
-     * Creates the Java source code for the runtime class.
-     * 
-     * @param scriptInDocs whether to include the Jiffle script in the class
-     *        javadocs
-     * 
-     * @throws JiffleException if an error occurs generating the source 
-     */
-    private String createRuntimeSource(Jiffle.RuntimeModel model,
-            String baseClassName, boolean scriptInDocs) throws JiffleException {
-
-        // TODO
-        return null;
-    }
-    
-    
     private static class Result<T> {
         final T result;
         final Messages messages;

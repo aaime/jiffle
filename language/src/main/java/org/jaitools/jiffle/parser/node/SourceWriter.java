@@ -1,6 +1,7 @@
 package org.jaitools.jiffle.parser.node;
 
 import org.jaitools.jiffle.Jiffle;
+import org.jaitools.jiffle.JiffleProperties;
 
 import java.util.Arrays;
 
@@ -15,6 +16,7 @@ public class SourceWriter {
     private int indentAmount = 0;
     private String indentation = "";
     private String script;
+    private String baseClassName;
 
     public SourceWriter(Jiffle.RuntimeModel model) {
         this.runtimeModel = model;
@@ -114,5 +116,20 @@ public class SourceWriter {
 
     public String getScript() {
         return this.script;
+    }
+
+    public void setBaseClassName(String baseClassName) {
+        this.baseClassName = baseClassName;
+    }
+
+    public String getBaseClassName() {
+        if (this.baseClassName == null) {
+            if (runtimeModel == Jiffle.RuntimeModel.DIRECT) {
+                return JiffleProperties.DEFAULT_DIRECT_BASE_CLASS.getName();
+            } else {
+                return JiffleProperties.DEFAULT_INDIRECT_BASE_CLASS.getName();
+            }
+        }
+        return this.baseClassName;
     }
 }

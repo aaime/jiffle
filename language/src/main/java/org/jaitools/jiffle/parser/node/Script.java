@@ -38,12 +38,12 @@ public class Script extends AbstractNode {
         }
 
         // class declaration
-        String template = "public class %s extends " + packageName + ".%s {";
+        String template = "public class %s extends %s {";
         Jiffle.RuntimeModel model = w.getRuntimeModel();
         if (model == Jiffle.RuntimeModel.DIRECT) {
-            w.line(format(template, "JiffleDirectRuntimeImpl", "AbstractDirectRuntime"));
+            w.line(format(template, "JiffleDirectRuntimeImpl", w.getBaseClassName()));
         } else {
-            w.line(format(template, "JiffleIndirectRuntimeImpl", "AbstractIndirectRuntime")); 
+            w.line(format(template, "JiffleIndirectRuntimeImpl", w.getBaseClassName())); 
         }
         // writing class fields
         w.inc();
