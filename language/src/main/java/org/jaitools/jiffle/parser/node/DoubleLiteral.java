@@ -10,8 +10,7 @@ public class DoubleLiteral extends ScalarLiteral {
     
     private static String checkValue(String value) {
         // will throw a NumberFormatException if not a valid double
-        Double.valueOf(value);
-        return value;
+        return Double.valueOf(value).toString();
     }
 
     public DoubleLiteral(String value) {

@@ -23,8 +23,7 @@ public class PrefixUnaryExpression extends Expression {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        w.append(op).append(arg);
     }
     
 }

@@ -3,17 +3,17 @@ package org.jaitools.jiffle.parser.node;
 public class Until implements Statement {
 
     private final Expression condition;
-    private final StatementList stmts;
+    private final Statement statement;
 
-    public Until(Expression condition, StatementList stmts) {
+    public Until(Expression condition, Statement statement) {
         this.condition = condition;
-        this.stmts = stmts;
+        this.statement = statement;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("while(_FN.sign(").append(condition).append(") != 1) {\n").append(stmts).append("}");
+        sb.append("while(_FN.sign(").append(condition).append(") != 1) {\n").append(statement).append("}");
         return sb.toString();
     }
 
@@ -22,7 +22,7 @@ public class Until implements Statement {
         condition.write(w);
         w.append(")) {\n");
         w.inc();
-        stmts.write(w);
+        statement.write(w);
         w.dec();
         w.line("}");
     }

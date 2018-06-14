@@ -44,6 +44,9 @@ public class OptionsBlockWorker extends BaseWorker {
         try {
             
             if (OptionLookup.isValidValue(name, value)) {
+                if ("NaN".equals(value) || "null".equals(value)) {
+                    value = "Double.NaN";
+                }
                 options.put(name, value);
             } else {
                 messages.error(oc.getStart(),

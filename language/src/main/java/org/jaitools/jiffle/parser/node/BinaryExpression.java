@@ -81,8 +81,8 @@ public class BinaryExpression extends Expression {
             throw new NodeException(Errors.INVALID_BINARY_EXPRESSION);
         }
 
-        this.left = left;
-        this.right = right;
+        this.left = left.forceDouble();
+        this.right = right.forceDouble();
         this.declarationNeeded = declarationNeeded;
     }
 

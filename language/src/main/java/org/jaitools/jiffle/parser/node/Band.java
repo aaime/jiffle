@@ -23,8 +23,11 @@ public class Band implements Node {
     }
 
     public void write(SourceWriter w) {
-        String line = toString();
-        w.append(line);
+        if (index instanceof IntLiteral) {
+            w.append(index);
+        } else {
+            w.append("(int)(").append(index).append(")");
+        }
     }
     
 }

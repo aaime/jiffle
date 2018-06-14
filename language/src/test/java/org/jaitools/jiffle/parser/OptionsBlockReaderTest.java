@@ -90,7 +90,17 @@ public class OptionsBlockReaderTest extends ParserTestBase {
 
         parseOptions(script);
         assertMessages();
-        expectedOptions.put("outside", "null");
+        expectedOptions.put("outside", "Double.NaN");
+        assertOptions();
+    }
+
+    @Test
+    public void outsideNaN() throws Exception {
+        script = "options { outside = NaN; } dest = 42;";
+
+        parseOptions(script);
+        assertMessages();
+        expectedOptions.put("outside", "Double.NaN");
         assertOptions();
     }
 

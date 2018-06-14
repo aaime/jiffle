@@ -43,10 +43,11 @@ public class RuntimeModelWorkerTest {
             }
         }
         
+        OptionsBlockWorker ow = new OptionsBlockWorker(tree);
         VarWorker vw = new VarWorker(tree, ibw.imageVars);
         ExpressionWorker ew = new ExpressionWorker(tree, vw);
         
-        RuntimeModelWorker rsw = new RuntimeModelWorker(tree, ew.getProperties(), ew.getScopes());
+        RuntimeModelWorker rsw = new RuntimeModelWorker(tree, ow.options, ew.getProperties(), ew.getScopes());
         
         Script script = rsw.getScriptNode();
         SourceWriter writer = new SourceWriter(model);

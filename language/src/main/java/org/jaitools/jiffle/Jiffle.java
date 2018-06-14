@@ -37,12 +37,9 @@ import org.jaitools.jiffle.parser.InitBlockWorker;
 import org.jaitools.jiffle.parser.JiffleLexer;
 import org.jaitools.jiffle.parser.JiffleParser;
 import org.jaitools.jiffle.parser.JiffleParserErrorListener;
-import org.jaitools.jiffle.parser.JiffleType;
 import org.jaitools.jiffle.parser.Messages;
 import org.jaitools.jiffle.parser.OptionsBlockWorker;
 import org.jaitools.jiffle.parser.RuntimeModelWorker;
-import org.jaitools.jiffle.parser.SymbolScope;
-import org.jaitools.jiffle.parser.TreeNodeProperties;
 import org.jaitools.jiffle.parser.VarWorker;
 import org.jaitools.jiffle.parser.node.Script;
 import org.jaitools.jiffle.parser.node.SourceWriter;
@@ -407,7 +404,7 @@ public class Jiffle {
         reportMessages(expressionWorker.messages);
 
         // 
-        RuntimeModelWorker worker = new RuntimeModelWorker(tree, expressionWorker.getProperties(), expressionWorker.getScopes());
+        RuntimeModelWorker worker = new RuntimeModelWorker(tree, optionsWorker.options, expressionWorker.getProperties(), expressionWorker.getScopes());
         this.scriptModel = worker.getScriptNode();
     }
     

@@ -81,6 +81,11 @@ import org.jaitools.jiffle.parser.node.GlobalVars;
 import org.jaitools.jiffle.parser.node.IfElse;
 import org.jaitools.jiffle.parser.node.ImagePos;
 import org.jaitools.jiffle.parser.node.IntLiteral;
+import org.jaitools.jiffle.parser.node.ListAppend;
+import org.jaitools.jiffle.parser.node.ListLiteral;
+import org.jaitools.jiffle.parser.node.LoopInLiteralList;
+import org.jaitools.jiffle.parser.node.LoopInRange;
+import org.jaitools.jiffle.parser.node.LoopInVariable;
 import org.jaitools.jiffle.parser.node.Node;
 import org.jaitools.jiffle.parser.node.NodeException;
 import org.jaitools.jiffle.parser.node.ParenExpression;
@@ -140,6 +145,7 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
     
     private final TreeNodeProperties<JiffleType> types;
     private final TreeNodeProperties<SymbolScope> scopes;
+    private final Map<String,String> options;
     private final Set<VariableKey> declaredVariables = new HashSet<>();
     
     // Set to a non-null reference if an init block is found
@@ -152,12 +158,14 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
      * annotated by an ExpressionWorker.
      */
     public RuntimeModelWorker(ParseTree tree,
+            Map<String, String> options,
             TreeNodeProperties<JiffleType> types,
             TreeNodeProperties<SymbolScope> scopes) {
         
         super(tree);
         this.types = types;
         this.scopes = scopes;
+        this.options = options;
         
         walkTree();
     }
@@ -169,7 +177,7 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
         GlobalVars globals = initBlockContext == null ?
                 new GlobalVars() : getAsType(initBlockContext, GlobalVars.class);
 
-        this.script = new Script(globals, stmts);
+        this.script = new Script(options, globals, stmts);
         set(ctx, this.script);
     }
     
@@ -455,6 +463,8 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
         PixelSpecifierContext pixelCtx = ctx.pixelSpecifier();
         Pixel pixel = pixelCtx == null ?
                 Pixel.DEFAULT : getAsType(pixelCtx, Pixel.class);
+        
+        set(ctx, new ImagePos(band, pixel));
     }
 
     @Override
@@ -531,7 +541,7 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
         Token tok = ctx.getStart();
         switch (tok.getType()) {
             case JiffleParser.INT_LITERAL:
-                set(ctx, new IntLiteral(tok.getText()));
+                set(ctx, new IntLiteral(tok.getText())); 
                 break;
                 
             case JiffleParser.FLOAT_LITERAL:
@@ -554,8 +564,19 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
                 throw new JiffleParserException("Unrecognized literal type: " + tok.getText());
         }
     }
-    
-    
+
+    @Override
+    public void exitListLiteral(JiffleParser.ListLiteralContext ctx) {
+        List<Expression> expressions = new ArrayList<>();
+        if (ctx.expressionList() != null && ctx.expressionList().expression() != null) {
+            for (ExpressionContext ec : ctx.expressionList().expression()) {
+                Expression expression = getAsType(ec, Expression.class);
+                expressions.add(expression);
+            }
+        }
+        set(ctx, new ListLiteral(expressions));
+    }
+
     /*
      * Looks up the inner-most scope for a rule node.
      */
@@ -616,8 +637,8 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
     @Override
     public void exitUntilStmt(JiffleParser.UntilStmtContext ctx) {
         Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
-        StatementList statements = getAsType(ctx.statement(), StatementList.class);
-        set(ctx, new Until(condition, statements));
+        Statement statement = getAsType(ctx.statement(), Statement.class);
+        set(ctx, new Until(condition, statement));
     }
 
     @Override
@@ -648,7 +669,8 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
         return this.script;
     }
 
-    @Override public void exitIfStmt(JiffleParser.IfStmtContext ctx) {
+    @Override 
+    public void exitIfStmt(JiffleParser.IfStmtContext ctx) {
         Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
         List<StatementContext> statements = ctx.statement();
         Statement ifBlock = getAsType(statements.get(0), Statement.class);
@@ -657,5 +679,32 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
             elseBlock = getAsType(statements.get(1), Statement.class);
         };
         set(ctx, new IfElse(condition, ifBlock, elseBlock));
+    }
+
+    @Override
+    public void exitListAppendStmt(JiffleParser.ListAppendStmtContext ctx) {
+        String varName = ctx.ID().getText();
+        Expression expression = getAsType(ctx.expression(), Expression.class);
+        set(ctx, new ListAppend(new Variable(varName, JiffleType.LIST), expression));
+    }
+
+    @Override
+    public void exitForeachStmt(JiffleParser.ForeachStmtContext ctx) {
+        String varName = ctx.ID().getText();
+        JiffleParser.RangeContext range = ctx.loopSet().range();
+        Variable loopVariable = new Variable(varName, JiffleType.D);
+        Statement statement = getAsType(ctx.statement(), Statement.class);
+        if (ctx.loopSet().ID() != null) {
+            Variable listVariable = new Variable(ctx.loopSet().ID().getText(), JiffleType.LIST);
+            set(ctx, new LoopInVariable(loopVariable, listVariable, statement));
+        } else  if (range != null) {
+            Expression low = getAsType(range.expression(0), Expression.class);
+            Expression high = getAsType(range.expression(1), Expression.class);
+            set(ctx, new LoopInRange(loopVariable, low, high, statement));
+        } else {
+            ListLiteral listLiteral = getAsType(ctx.loopSet().listLiteral(), ListLiteral.class);
+            set(ctx, new LoopInLiteralList(loopVariable, listLiteral, statement));
+        }
+        
     }
 }
