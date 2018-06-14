@@ -91,8 +91,8 @@ public class BinaryExpression extends Expression {
             String type = getJavaType();
             w.append(type).append(" ");
         }
-        String leftCode = SourceWriter.writeToString(left);
-        String rightCode = SourceWriter.writeToString(right);
+        String leftCode = w.writeToString(left);
+        String rightCode = w.writeToString(right);
         w.append(String.format(op.getFormat(), leftCode, rightCode));
     }
 

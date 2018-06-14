@@ -103,11 +103,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Generates Java sources for the runtime class.
+ * Generates a Java model representing the script, from which sources can be generated
  *
  * @author michael
  */
-public class RuntimeSourceWorker extends PropertyWorker<Node> {
+public class RuntimeModelWorker extends PropertyWorker<Node> {
 
     /**
      * A key for the declared variables set
@@ -139,7 +139,6 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
     
     private final TreeNodeProperties<JiffleType> types;
     private final TreeNodeProperties<SymbolScope> scopes;
-    private final RuntimeModel runtimeModel;
     private final Set<VariableKey> declaredVariables = new HashSet<>();
     
     // Set to a non-null reference if an init block is found
@@ -151,15 +150,13 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
      * of the runtime code. Expects that the tree has been previously
      * annotated by an ExpressionWorker.
      */
-    public RuntimeSourceWorker(ParseTree tree,
+    public RuntimeModelWorker(ParseTree tree,
             TreeNodeProperties<JiffleType> types,
-            TreeNodeProperties<SymbolScope> scopes,
-            Jiffle.RuntimeModel runtimeModel) {
+            TreeNodeProperties<SymbolScope> scopes) {
         
         super(tree);
         this.types = types;
         this.scopes = scopes;
-        this.runtimeModel = runtimeModel;
         
         walkTree();
     }
@@ -371,7 +368,7 @@ public class RuntimeSourceWorker extends PropertyWorker<Node> {
         try {
             switch (symbol.getType()) {
                 case DEST_IMAGE:
-                    set(ctx, new SetDestValue(runtimeModel, varName, expr));
+                    set(ctx, new SetDestValue(varName, expr));
                     break;
 
                 case LIST:

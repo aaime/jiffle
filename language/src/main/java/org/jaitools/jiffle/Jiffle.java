@@ -38,10 +38,9 @@ import org.jaitools.jiffle.parser.JiffleLexer;
 import org.jaitools.jiffle.parser.JiffleParser;
 import org.jaitools.jiffle.parser.JiffleParserErrorListener;
 import org.jaitools.jiffle.parser.JiffleType;
-import org.jaitools.jiffle.parser.Message;
 import org.jaitools.jiffle.parser.Messages;
 import org.jaitools.jiffle.parser.OptionsBlockWorker;
-import org.jaitools.jiffle.parser.RuntimeSourceWorker;
+import org.jaitools.jiffle.parser.RuntimeModelWorker;
 import org.jaitools.jiffle.parser.SymbolScope;
 import org.jaitools.jiffle.parser.TreeNodeProperties;
 import org.jaitools.jiffle.parser.VarWorker;
@@ -59,6 +58,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Compiles scripts and generates Java sources and executable bytecode for
@@ -105,9 +105,8 @@ import java.util.logging.Logger;
 public class Jiffle {
     
     public static final Logger LOGGER = Logger.getLogger(Jiffle.class.getName());
-    private ParseTree tree;
-    private TreeNodeProperties<SymbolScope> scopes;
-    private TreeNodeProperties<JiffleType> properties;
+    
+    private static Pattern BLOCK_COMMENT_STRIPPER = Pattern.compile("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)");
 
     /** 
      * Constants for runtime model. Jiffle supports two runtime models:
@@ -191,6 +190,7 @@ public class Jiffle {
     private String name;
 
     private String theScript;
+    private Script scriptModel;
     private Map<String, Jiffle.ImageRole> imageParams;
     
     /**
@@ -397,7 +397,7 @@ public class Jiffle {
             setImageParams(r.result);
         }
 
-        // TODO: harmonize with the above!
+        // run the other preparation and check related workers
         OptionsBlockWorker optionsWorker = new OptionsBlockWorker(tree);
         reportMessages(optionsWorker.messages);
         InitBlockWorker initWorker = new InitBlockWorker(tree);
@@ -405,11 +405,10 @@ public class Jiffle {
         VarWorker vw = new VarWorker(tree, imageParams);
         ExpressionWorker expressionWorker = new ExpressionWorker(tree, vw);
         reportMessages(expressionWorker.messages);
-        
-        // all good, record the accumulated info for source generation
-        this.tree = tree;
-        this.scopes = expressionWorker.getScopes();
-        this.properties = expressionWorker.getProperties();
+
+        // 
+        RuntimeModelWorker worker = new RuntimeModelWorker(tree, expressionWorker.getProperties(), expressionWorker.getScopes());
+        this.scriptModel = worker.getScriptNode();
     }
     
     /**
@@ -419,7 +418,7 @@ public class Jiffle {
      *         {@code false} otherwise
      */
     public boolean isCompiled() {
-        return tree != null && properties != null && scopes != null;
+        return scriptModel != null;
     }
     
     /**
@@ -528,13 +527,16 @@ public class Jiffle {
             throw new RuntimeException("Do no know how to clean the block comments yet");
         }
         
-        RuntimeSourceWorker worker = new RuntimeSourceWorker(tree, properties, scopes, model);
-        Script scriptNode = worker.getScriptNode();
-        SourceWriter writer = new SourceWriter();
-        scriptNode.write(writer);
+        SourceWriter writer = new SourceWriter(model);
+        writer.setScript(stripComments(theScript));
+        scriptModel.write(writer);
         return writer.getSource();
     }
-    
+
+    private String stripComments(String theScript) {
+        return BLOCK_COMMENT_STRIPPER.matcher(theScript).replaceAll("");
+    }
+
     /**
      * Initializes this object's name and runtime base class.
      */

@@ -1,5 +1,7 @@
 package org.jaitools.jiffle.parser.node;
 
+import org.jaitools.jiffle.Jiffle;
+
 import java.util.Arrays;
 
 /**
@@ -7,10 +9,20 @@ import java.util.Arrays;
  */
 public class SourceWriter {
 
+    private Jiffle.RuntimeModel runtimeModel;
     private StringBuilder sb = new StringBuilder();
     private int indentStep = 4;
     private int indentAmount = 0;
     private String indentation = "";
+    private String script;
+
+    public SourceWriter(Jiffle.RuntimeModel model) {
+        this.runtimeModel = model;
+    }
+
+    public Jiffle.RuntimeModel getRuntimeModel() {
+        return runtimeModel;
+    }
 
     /**
      * Writes out a node to a SourceWriter and returns the resulting script
@@ -18,8 +30,8 @@ public class SourceWriter {
      * @param node
      * @return
      */
-    public static String writeToString(Expression node) {
-        SourceWriter sw = new SourceWriter();
+    public String writeToString(Expression node) {
+        SourceWriter sw = new SourceWriter(runtimeModel);
         node.write(sw);
         return sw.getSource();
     }
@@ -94,5 +106,13 @@ public class SourceWriter {
         node.write(this);
         return this;
         
+    }
+
+    public void setScript(String script) {
+        this.script = script;
+    }
+
+    public String getScript() {
+        return this.script;
     }
 }

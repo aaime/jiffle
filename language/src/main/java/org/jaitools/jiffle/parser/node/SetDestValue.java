@@ -10,7 +10,6 @@ import org.jaitools.jiffle.parser.*;
  * @author michael
  */
 public class SetDestValue extends Expression {
-    private final RuntimeModel runtimeModel;
     private final String destVar;
     private final Expression expr;
     
@@ -22,22 +21,22 @@ public class SetDestValue extends Expression {
         throw new NodeException(Errors.EXPECTED_SCALAR);
     }
 
-    public SetDestValue(Jiffle.RuntimeModel runtimeModel, String varName, Expression expr) 
+    public SetDestValue(String varName, Expression expr) 
             throws NodeException {
         
         super(ensureScalar(expr));
         
-        this.runtimeModel = runtimeModel;
         this.destVar = varName;
         this.expr = expr;
     }
     
     @Override
     public String toString() {
-        return DirectSources.setDestValue(runtimeModel, destVar, expr.toString());
+        return DirectSources.setDestValue(RuntimeModel.DIRECT, destVar, expr.toString());
     }
 
     public void write(SourceWriter w) {
+        RuntimeModel runtimeModel = w.getRuntimeModel();
         switch (runtimeModel) {
             case DIRECT:
                 w.append("writeToImage(\"").append(destVar).append("\", _x, _y, 0, ");
