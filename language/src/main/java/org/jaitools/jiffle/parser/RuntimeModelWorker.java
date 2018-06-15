@@ -69,6 +69,7 @@ import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.Jiffle.RuntimeModel;
 import org.jaitools.jiffle.parser.node.Band;
 import org.jaitools.jiffle.parser.node.BinaryExpression;
+import org.jaitools.jiffle.parser.node.Break;
 import org.jaitools.jiffle.parser.node.BreakIf;
 import org.jaitools.jiffle.parser.node.ConFunction;
 import org.jaitools.jiffle.parser.node.ConstantLiteral;
@@ -99,6 +100,7 @@ import org.jaitools.jiffle.parser.node.SimpleStatement;
 import org.jaitools.jiffle.parser.node.Statement;
 import org.jaitools.jiffle.parser.node.StatementList;
 import org.jaitools.jiffle.parser.node.Until;
+import org.jaitools.jiffle.parser.node.While;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -706,5 +708,18 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
             set(ctx, new LoopInLiteralList(loopVariable, listLiteral, statement));
         }
         
+    }
+
+    @Override
+    public void exitBreakStmt(JiffleParser.BreakStmtContext ctx) {
+        set(ctx, new Break());
+    }
+
+    @Override
+    public void exitWhileStmt(JiffleParser.WhileStmtContext ctx) {
+        Expression condition = getAsType(ctx.parenExpression().expression(), Expression.class);
+        Statement statement = getAsType(ctx.statement(), Statement.class);
+        set(ctx, new While(condition, statement));
+
     }
 }

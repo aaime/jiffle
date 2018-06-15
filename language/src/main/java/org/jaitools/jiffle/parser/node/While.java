@@ -1,11 +1,11 @@
 package org.jaitools.jiffle.parser.node;
 
-public class Until implements Statement {
+public class While implements Statement {
 
     private final Expression condition;
     private final Statement statement;
 
-    public Until(Expression condition, Statement statement) {
+    public While(Expression condition, Statement statement) {
         this.condition = condition;
         this.statement = statement;
     }
@@ -13,12 +13,12 @@ public class Until implements Statement {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("while(!_FN.isTrue(").append(condition).append(")) {\n").append(statement).append("}");
+        sb.append("while(_FN.isTrue(").append(condition).append(")) {\n").append(statement).append("}");
         return sb.toString();
     }
 
     public void write(SourceWriter w) {
-        w.indent().append("while (!_FN.isTrue(");
+        w.indent().append("while (_FN.isTrue(");
         condition.write(w);
         w.append(")) {\n");
         w.inc();
