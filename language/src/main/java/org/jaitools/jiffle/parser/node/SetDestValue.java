@@ -39,13 +39,11 @@ public class SetDestValue extends Expression {
         RuntimeModel runtimeModel = w.getRuntimeModel();
         switch (runtimeModel) {
             case DIRECT:
-                w.append("writeToImage(\"").append(destVar).append("\", _x, _y, 0, ");
-                expr.write(w);
-                w.append(")");
+                w.append("writeToImage(\"").append(destVar).append("\", _x, _y, 0, ").append(expr).append(")");
                 break;
                 
             case INDIRECT:
-                w.append("return ").append(expr);
+                w.append("result = ").append(expr);
                 break;
 
             default:

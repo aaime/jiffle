@@ -89,11 +89,11 @@ public class SpecifyingImageVarsTest extends RuntimeTestBase {
         jiffle.setScript(script);
         jiffle.compile();
         
-        runtimeInstance = (JiffleDirectRuntime) jiffle.getRuntimeInstance();
-        runtimeInstance.setSourceImage("inimage", createSequenceImage());
-        runtimeInstance.evaluateAll(null);
+        directRuntimeInstance = (JiffleDirectRuntime) jiffle.getRuntimeInstance();
+        directRuntimeInstance.setSourceImage("inimage", createSequenceImage());
+        directRuntimeInstance.evaluateAll(null);
         
-        Double var = runtimeInstance.getVar("n");
+        Double var = directRuntimeInstance.getVar("n");
         assertNotNull(var);
         assertEquals(5, var.intValue());
     }
@@ -119,19 +119,19 @@ public class SpecifyingImageVarsTest extends RuntimeTestBase {
         jiffle.setScript(script);
         jiffle.compile();
         
-        runtimeInstance = (JiffleDirectRuntime) jiffle.getRuntimeInstance();
+        directRuntimeInstance = (JiffleDirectRuntime) jiffle.getRuntimeInstance();
         
         if (srcVarName != null && srcVarName.length() > 0) {
             srcImg = createSequenceImage();
-            runtimeInstance.setSourceImage(srcVarName, srcImg);
+            directRuntimeInstance.setSourceImage(srcVarName, srcImg);
         }
         
         if (destVarName != null && destVarName.length() > 0) {
             destImg = ImageUtils.createConstantImage(IMG_WIDTH, IMG_WIDTH, 0d);
-            runtimeInstance.setDestinationImage(destVarName, destImg);
+            directRuntimeInstance.setDestinationImage(destVarName, destImg);
         }
         
-        runtimeInstance.evaluateAll(null);
+        directRuntimeInstance.evaluateAll(null);
         assertImage(srcImg, destImg, e);
     }
 

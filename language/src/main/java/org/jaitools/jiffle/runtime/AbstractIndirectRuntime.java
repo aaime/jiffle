@@ -25,6 +25,8 @@
 
 package org.jaitools.jiffle.runtime;
 
+import java.awt.*;
+import java.awt.image.RenderedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,6 +109,21 @@ public abstract class AbstractIndirectRuntime extends AbstractJiffleRuntime impl
         
         sourceImageNames.add(varName);
         setTransform(varName, tr);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setDefaultBounds() {
+
+        String imageName = (String) readers.keySet().iterator().next();
+        RenderedImage refImage = (RenderedImage) images.get(imageName);
+
+        Rectangle rect = new Rectangle(
+                refImage.getMinX(), refImage.getMinY(),
+                refImage.getWidth(), refImage.getHeight());
+
+        setWorldByResolution(rect, 1, 1);
     }
 
 }

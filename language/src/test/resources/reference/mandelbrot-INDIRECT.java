@@ -43,10 +43,14 @@ public class JiffleIndirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstr
     }
 
     public double evaluate(double _x, double _y) {
+        if (!isWorldSet()) {
+            setDefaultBounds();
+        }
         if (!_imageScopeVarsInitialized) {
             initImageScopeVars();
         }
         _stk.clear();
+        double result = Double.NaN;
 
         double v_c_im = v_MaxIm - _y * v_Im_scale;
         double v_c_re = v_MinRe + _x * v_Re_scale;
@@ -63,6 +67,7 @@ public class JiffleIndirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstr
             v_Z_re = v_Z_re2 - v_Z_im2 + v_c_re;
             v_n++;
         }
-        return v_outside;
+        result = v_outside;
+        return result;
     }
 }

@@ -49,6 +49,11 @@ public class ImageScopeVarsTest extends RuntimeTestBase {
             public double eval(double val) {
                 return n++ ;
             }
+
+            @Override
+            public void reset() {
+                n = 0;
+            }
         };
 
         testScript(script, e);
@@ -65,6 +70,11 @@ public class ImageScopeVarsTest extends RuntimeTestBase {
 
             public double eval(double val) {
                 return n-- ;
+            }
+
+            @Override
+            public void reset() {
+                n = 0;
             }
         };
 
@@ -88,10 +98,15 @@ public class ImageScopeVarsTest extends RuntimeTestBase {
                 }
                 return n;
             }
+
+            @Override
+            public void reset() {
+                n = 0;
+            }
         };
 
         testScript(script, e);
-        assertEquals(NUM_PIXELS / 2, runtimeInstance.getVar("n"), TOL);
+        assertEquals(NUM_PIXELS / 2, directRuntimeInstance.getVar("n"), TOL);
     }
 
     @Test

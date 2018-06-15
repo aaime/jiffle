@@ -60,5 +60,9 @@ public abstract class MockIndirectBaseClass
     public void setDestinationImage(String varName, CoordinateTransform tr) {
         throw new UnsupportedOperationException("Should not be called");
     }
+    
+    public void setDefaultBounds() {
+        
+    }
 
 }

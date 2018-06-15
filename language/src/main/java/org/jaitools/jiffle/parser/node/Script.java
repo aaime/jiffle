@@ -112,23 +112,30 @@ public class Script extends AbstractNode {
         w.inc();
         
         // basic checks at the beginnig of pixel evaluation
-        if (model == Jiffle.RuntimeModel.DIRECT) {
-            w.line("if (!isWorldSet()) {");
-            w.inc();
-            w.line("setDefaultBounds();");
-            w.dec();
-            w.line("}");
-        }
+        w.line("if (!isWorldSet()) {");
+        w.inc();
+        w.line("setDefaultBounds();");
+        w.dec();
+        w.line("}");
         w.line("if (!_imageScopeVarsInitialized) {");
         w.inc();
         w.line("initImageScopeVars();");
         w.dec();
         w.line("}");
         w.line("_stk.clear();");
-        
+        if (model == Jiffle.RuntimeModel.INDIRECT) {
+            w.line("double result = Double.NaN;");
+        }
+
         // the actual script
         w.newLine();
         stmts.write(w);
+        
+        // in case of indirect runtime, return the result at the end
+        if (model == Jiffle.RuntimeModel.INDIRECT) {
+            w.line("return result;");
+        }
+        
         w.dec();
         w.line("}");
         

@@ -24,18 +24,19 @@
  */   
 package org.jaitools.jiffle.runtime;
 
-import java.awt.image.RenderedImage;
-import java.util.Map;
-
-import javax.media.jai.TiledImage;
-import javax.media.jai.iterator.RectIter;
-import javax.media.jai.iterator.RectIterFactory;
+import static org.junit.Assert.assertEquals;
 
 import org.jaitools.CollectionFactory;
 import org.jaitools.imageutils.ImageUtils;
 import org.jaitools.jiffle.Jiffle;
 
-import static org.junit.Assert.*;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.util.Map;
+
+import javax.media.jai.TiledImage;
+import javax.media.jai.iterator.RectIter;
+import javax.media.jai.iterator.RectIterFactory;
 
 /**
  * Base class for unit tests of runtime methods.
@@ -53,11 +54,13 @@ public abstract class RuntimeTestBase {
     private final JiffleProgressListener nullListener = new NullProgressListener();
     
     protected Map<String, Jiffle.ImageRole> imageParams;
-    protected JiffleDirectRuntime runtimeInstance;
+    protected JiffleDirectRuntime directRuntimeInstance;
+    protected JiffleIndirectRuntime indirectRuntimeInstance;
     
     static {
         System.setProperty("org.codehaus.janino.source_debugging.enable", "true");
-        System.setProperty("org.codehaus.janino.source_debugging.dir", System.getProperty("java.io.tmpdir"));
+        new File("./target/janino").mkdir();
+        System.setProperty("org.codehaus.janino.source_debugging.dir", "./target/janino");
     }
 
     public abstract class Evaluator {
@@ -72,6 +75,11 @@ public abstract class RuntimeTestBase {
         }
         
         public abstract double eval(double val);
+        
+        public void reset() {
+            this.x = 0;
+            this.y = 0;
+        }
     }
     
     protected RenderedImage createSequenceImage() {
@@ -105,13 +113,19 @@ public abstract class RuntimeTestBase {
         imageParams.put("dest", Jiffle.ImageRole.DEST);
         imageParams.put("src", Jiffle.ImageRole.SOURCE);
 
+        // test the direct runtime
         Jiffle jiffle = new Jiffle(script, imageParams);
-        runtimeInstance = jiffle.getRuntimeInstance();
-
-        testRuntime(srcImg, runtimeInstance, evaluator);
+        directRuntimeInstance = jiffle.getRuntimeInstance();
+        testDirectRuntime(srcImg, directRuntimeInstance, evaluator);
+        
+        // and now the indirect one
+        indirectRuntimeInstance =
+                (JiffleIndirectRuntime) jiffle.getRuntimeInstance(Jiffle.RuntimeModel.INDIRECT);
+        evaluator.reset();
+        testIndirectRuntime(srcImg, indirectRuntimeInstance, evaluator);
     }
 
-    protected void testRuntime(RenderedImage srcImg, JiffleDirectRuntime runtime, Evaluator evaluator) {
+    protected void testDirectRuntime(RenderedImage srcImg, JiffleDirectRuntime runtime, Evaluator evaluator) {
         runtime.setSourceImage("src", srcImg);
 
         TiledImage destImg = ImageUtils.createConstantImage(
@@ -120,6 +134,66 @@ public abstract class RuntimeTestBase {
 
         runtime.evaluateAll(nullListener);
         assertImage(srcImg, destImg, evaluator);
+    }
+
+    protected void testIndirectRuntime(RenderedImage srcImg, JiffleIndirectRuntime runtime, Evaluator evaluator) {
+        runtime.setSourceImage("src", srcImg);
+
+        if (srcImg != null) {
+            RectIter srcIter = RectIterFactory.create(srcImg, null);
+
+            int x = srcImg.getMinX(), y = srcImg.getMinY();
+            do {
+                do {
+                    double expected = evaluator.eval(srcIter.getSampleDouble());
+                    double actual = runtime.evaluate(x, y);
+                    assertEquals(
+                            "Got "
+                                    + expected
+                                    + " instead of "
+                                    + actual
+                                    + " at row "
+                                    + y
+                                    + " and col "
+                                    + x,
+                            expected,
+                            actual,
+                            TOL);
+                    x++;
+                    if (x >= (srcImg.getMinX() + srcImg.getWidth())) {
+                        x = srcImg.getMinX();
+                        y++;
+                    }
+                } while (!srcIter.nextPixelDone());
+
+                srcIter.startPixels();
+            } while (!srcIter.nextLineDone());
+        } else {
+            final int minX = srcImg.getMinX();
+            final int minY = srcImg.getMinY();
+            final int maxX = srcImg.getMinX() + srcImg.getWidth();
+            final int maxY = srcImg.getMinY() + srcImg.getHeight();
+
+            for (int y = minY; y < maxY; y ++) {
+                for (double x = minX; x < maxX; x ++) {
+                    double expected = evaluator.eval(0);
+                    double actual = runtime.evaluate(x, y);
+                    assertEquals(
+                            "Got "
+                                    + expected
+                                    + " instead of "
+                                    + actual
+                                    + " at row "
+                                    + y
+                                    + " and col "
+                                    + x,
+                            expected,
+                            actual,
+                            TOL);
+                }
+            }
+        }
+        
     }
 
     protected void assertImage(RenderedImage srcImg, RenderedImage destImg, Evaluator evaluator) {

@@ -44,6 +44,27 @@ public class RuntimeModelWorkerTest {
         assertGeneratedSource("chessboard.jfl", RuntimeModel.DIRECT, "result");
     }
 
+    @Test
+    public void lifeEdges() throws Exception {
+        assertGeneratedSource("life-edges.jfl", RuntimeModel.DIRECT, "nextworld", "world");
+    }
+
+    @Test
+    public void lifeToroid() throws Exception {
+        assertGeneratedSource("life-toroid.jfl", RuntimeModel.DIRECT, "nextworld", "world");
+    }
+
+    @Test
+    public void aspect() throws Exception {
+        assertGeneratedSource("aspect.jfl", RuntimeModel.DIRECT, "result", "dtm");
+        // this one is interesting, has multiple assignements to the output
+        assertGeneratedSource("aspect.jfl", RuntimeModel.INDIRECT, "result", "dtm");
+    }
+
+    @Test
+    public void flow() throws Exception {
+        assertGeneratedSource("flow.jfl", RuntimeModel.DIRECT, "result", "dtm");
+    }
 
     private void assertGeneratedSource(String scriptFileName, RuntimeModel model) throws Exception {
         assertGeneratedSource(scriptFileName, model, null);

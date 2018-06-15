@@ -24,15 +24,21 @@
  */   
 package org.jaitools.jiffle.runtime;
 
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.RenderedImage;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.JiffleException;
+
+import javax.media.jai.iterator.RandomIter;
+import javax.media.jai.iterator.RandomIterFactory;
 
 
 /**
@@ -70,6 +76,24 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     
     /** Number of pixels calculated from bounds and pixel dimensions. */
     private long _numPixels;
+
+    /**
+     * Maps source image variable names ({@link String}) to image
+     * iterators ({@link RandomIter}).
+     */
+    protected Map readers = new LinkedHashMap();
+
+    /*
+     * Note: not using generics here because they are not
+     * supported by the Janino compiler.
+     */
+
+    /**
+     * Maps image variable names ({@link String}) to images
+     * ({@link RenderedImage}).
+     *
+     */
+    protected Map images = new HashMap();
     
     private class TransformInfo {
         CoordinateTransform transform;
@@ -481,5 +505,88 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
             throw new IllegalArgumentException(name + "should be less than processing area height");
         }
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
+    public double readFromImage(String srcImageName, double x, double y, int band) {
+        boolean inside = true;
+        RenderedImage img = (RenderedImage) images.get(srcImageName);
+        CoordinateTransform tr = getTransform(srcImageName);
+
+        Point imgPos = tr.worldToImage(x, y, null);
+
+        int xx = imgPos.x - img.getMinX();
+        if (xx < 0 || xx >= img.getWidth()) {
+            inside = false;
+        } else {
+            int yy = imgPos.y - img.getMinY();
+            if (yy < 0 || yy >= img.getHeight()) {
+                inside = false;
+            }
+        }
+
+        if (!inside) {
+            if (_outsideValueSet) {
+                return _outsideValue;
+            } else {
+                throw new JiffleRuntimeException( String.format(
+                        "Position %.4f %.4f is outside bounds of image: %s",
+                        x, y, srcImageName));
+            }
+        }
+
+        RandomIter iter = (RandomIter) readers.get(srcImageName);
+        return iter.getSampleDouble(imgPos.x, imgPos.y, band);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setSourceImage(String varName, RenderedImage image) {
+        try {
+            doSetSourceImage(varName, image, null);
+        } catch (WorldNotSetException ex) {
+            // No exception can be caused by a null transform
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
+            throws JiffleException {
+        try {
+            doSetSourceImage(varName, image, tr);
+
+        } catch (WorldNotSetException ex) {
+            throw new JiffleException(String.format(
+                    "Setting a coordinate tranform for a source (%s) without"
+                            + "having first set the world bounds and resolution", varName));
+        }
+    }
+
+    private void doSetSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
+            throws WorldNotSetException {
+
+        images.put(varName, image);
+        readers.put(varName, RandomIterFactory.create(image, null));
+        setTransform(varName, tr);
+    }
+
+    /**
+     * Returns the images set for this runtime object as a {@code Map} with
+     * variable name as key and iamge as value. The returned {@code Map} is
+     * a copy of the one held by this object, so it can be safely modified
+     * by the caller.
+     *
+     * @return images keyed by variable name
+     */
+    public Map getImages() {
+        Map copy = new HashMap();
+        copy.putAll(images);
+        return copy;
+    }
+
+    public abstract void setDefaultBounds();
 }

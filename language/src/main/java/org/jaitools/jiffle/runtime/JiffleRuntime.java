@@ -26,6 +26,7 @@
 package org.jaitools.jiffle.runtime;
 
 import java.awt.geom.Rectangle2D;
+import java.awt.image.RenderedImage;
 import java.util.Map;
 
 import org.jaitools.jiffle.Jiffle.ImageRole;
@@ -208,5 +209,57 @@ public interface JiffleRuntime {
      * @return an array of names; may be empty but not {@code null}
      */
     String[] getDestinationVarNames();
-    
+
+    /**
+     * Associates a variable name with a source image and coordinate transform.
+     * The transform defines how to convert from processing area coordinates
+     * to image (pixel) coordinates. If {@code tr} is {@code null} the default
+     * identify transform will be used.
+     * <p> 
+     * Note that Jiffle uses rounding to reduce the transformed coordinates to 
+     * integers.
+     * 
+     * @param varName script variable representing the source image
+     * @param image writable image
+     * @param tr transform for processing area to image coordinates
+     * 
+     * @throws JiffleException if the world bounds and resolution have not
+     *         been set previously
+     */
+    void setSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
+            throws JiffleException;
+
+    /**
+     * Associates a variable name with a source image. Equivalent to:
+     * <pre><code>
+     * setSourceImage(varName, image, null)
+     * </code></pre>
+     * This convenience method is defined in the interface because it will be
+     * commonly when working directly with image coordinates.
+     * 
+     * @param varName script variable representing the source image
+     * @param image writable image
+     */
+    void setSourceImage(String varName, RenderedImage image);
+
+    /**
+     * Gets a value from a source image for a given world position and
+     * image band.
+     * 
+     * @param srcImageName the source image
+     * @param x source X ordinate in world units
+     * @param y source Y ordinate in world units
+     * @param band source band
+     * 
+     * @return image value
+     */
+    double readFromImage(String srcImageName, double x, double y, int band);
+
+    /**
+     * Gets the images used by this object and returns them as a {@code Map}
+     * with variable names as keys and images as values.
+     * 
+     * @return images keyed by variable name
+     */
+    Map<String, RenderedImage> getImages();
 }

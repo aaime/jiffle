@@ -52,24 +52,6 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
 
     private static final double EPS = 1.0e-10d;
     
-    /* 
-     * Note: not using generics here because they are not
-     * supported by the Janino compiler.
-     */
-    
-    /** 
-     * Maps image variable names ({@link String}) to images
-     * ({@link RenderedImage}).
-     * 
-     */
-    protected Map images = new HashMap();
-    
-    /** 
-     * Maps source image variable names ({@link String}) to image
-     * iterators ({@link RandomIter}).
-     */
-    protected Map readers = new LinkedHashMap();
-    
     /**
      * Maps destination image variable names ({@link String} to
      * image iterators ({@link WritableRandomIter}).
@@ -130,40 +112,6 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
     /**
      * {@inheritDoc}
      */
-    public void setSourceImage(String varName, RenderedImage image) {
-        try {
-            doSetSourceImage(varName, image, null);
-        } catch (WorldNotSetException ex) {
-            // No exception can be caused by a null transform
-        }
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public void setSourceImage(String varName, RenderedImage image, CoordinateTransform tr) 
-            throws JiffleException {
-        try {
-            doSetSourceImage(varName, image, tr);
-            
-        } catch (WorldNotSetException ex) {
-            throw new JiffleException(String.format(
-                    "Setting a coordinate tranform for a source (%s) without"
-                    + "having first set the world bounds and resolution", varName));
-        }
-    }
-    
-    private void doSetSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
-            throws WorldNotSetException {
-        
-        images.put(varName, image);
-        readers.put(varName, RandomIterFactory.create(image, null));
-        setTransform(varName, tr);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void evaluateAll(JiffleProgressListener pl) {
         JiffleProgressListener listener = pl == null ? new NullProgressListener() : pl;
         
@@ -205,40 +153,6 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
     /**
      * {@inheritDoc}
      */
-    public double readFromImage(String srcImageName, double x, double y, int band) {
-        boolean inside = true;
-        RenderedImage img = (RenderedImage) images.get(srcImageName);
-        CoordinateTransform tr = getTransform(srcImageName);
-        
-        Point imgPos = tr.worldToImage(x, y, null);
-        
-        int xx = imgPos.x - img.getMinX();
-        if (xx < 0 || xx >= img.getWidth()) {
-            inside = false;
-        } else {
-            int yy = imgPos.y - img.getMinY();
-            if (yy < 0 || yy >= img.getHeight()) {
-                inside = false;
-            }
-        }
-        
-        if (!inside) {
-            if (_outsideValueSet) {
-                return _outsideValue;
-            } else {
-                throw new JiffleRuntimeException( String.format(
-                        "Position %.4f %.4f is outside bounds of image: %s", 
-                        x, y, srcImageName));
-            }
-        }
-        
-        RandomIter iter = (RandomIter) readers.get(srcImageName);
-        return iter.getSampleDouble(imgPos.x, imgPos.y, band);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
     public void writeToImage(String destImageName, double x, double y, int band, double value) {
         WritableRandomIter iter = (WritableRandomIter) writers.get(destImageName);
         CoordinateTransform tr = getTransform(destImageName);
@@ -252,7 +166,7 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
     public void setDefaultBounds() {
         RenderedImage refImage = null;
         String imageName = null;
-        
+
         if (!writers.isEmpty()) {
             imageName = (String) writers.keySet().iterator().next();
             refImage = (RenderedImage) images.get(imageName);
@@ -260,26 +174,11 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
             imageName = (String) readers.keySet().iterator().next();
             refImage = (RenderedImage) images.get(imageName);
         }
-        
+
         Rectangle rect = new Rectangle(
-                refImage.getMinX(), refImage.getMinY(), 
+                refImage.getMinX(), refImage.getMinY(),
                 refImage.getWidth(), refImage.getHeight());
-        
+
         setWorldByResolution(rect, 1, 1);
     }
-
-    /**
-     * Returns the images set for this runtime object as a {@code Map} with
-     * variable name as key and iamge as value. The returned {@code Map} is
-     * a copy of the one held by this object, so it can be safely modified
-     * by the caller.
-     * 
-     * @return images keyed by variable name
-     */
-    public Map getImages() {
-        Map copy = new HashMap();
-        copy.putAll(images);
-        return copy;
-    }
-
 }

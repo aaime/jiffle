@@ -26,6 +26,7 @@
 package org.jaitools.jiffle;
 
 import java.awt.geom.Rectangle2D;
+import java.awt.image.RenderedImage;
 import java.util.Map;
 
 import org.jaitools.jiffle.Jiffle.ImageRole;
@@ -102,6 +103,27 @@ public class NullRuntime implements JiffleRuntime {
 
     public String[] getDestinationVarNames() {
         return new String[0];
+    }
+
+    @Override
+    public void setSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
+            throws JiffleException {
+        
+    }
+
+    @Override
+    public void setSourceImage(String varName, RenderedImage image) {
+
+    }
+
+    @Override
+    public double readFromImage(String srcImageName, double x, double y, int band) {
+        return 0;
+    }
+
+    @Override
+    public Map<String, RenderedImage> getImages() {
+        return null;
     }
 
     public String[] getVarNames() {
