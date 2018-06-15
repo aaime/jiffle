@@ -2,6 +2,7 @@ package org.jaitools.jiffle.parser;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.FilenameUtils;
+import org.codehaus.janino.SimpleCompiler;
 import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.Jiffle.RuntimeModel;
 import org.jaitools.jiffle.parser.node.Script;
@@ -22,6 +23,27 @@ public class RuntimeModelWorkerTest {
         assertGeneratedSource("mandelbrot.jfl", RuntimeModel.DIRECT, "result");
         assertGeneratedSource("mandelbrot.jfl", RuntimeModel.INDIRECT, "result");
     }
+
+    @Test
+    public void interference() throws Exception {
+        assertGeneratedSource("interference.jfl", RuntimeModel.DIRECT, "result");
+    }
+
+    @Test
+    public void ripple() throws Exception {
+        assertGeneratedSource("ripple.jfl", RuntimeModel.DIRECT, "result");
+    }
+
+    @Test
+    public void squircle() throws Exception {
+        assertGeneratedSource("squircle.jfl", RuntimeModel.DIRECT, "result");
+    }
+
+    @Test
+    public void chessboard() throws Exception {
+        assertGeneratedSource("chessboard.jfl", RuntimeModel.DIRECT, "result");
+    }
+
 
     private void assertGeneratedSource(String scriptFileName, RuntimeModel model) throws Exception {
         assertGeneratedSource(scriptFileName, model, null);
@@ -54,7 +76,14 @@ public class RuntimeModelWorkerTest {
         script.write(writer);
 
         String referenceName = FilenameUtils.getBaseName(scriptFileName) + "-" + model + ".java";
-        SourceAssert.compare(new File("./src/test/resources/reference", referenceName), writer.getSource());
+        String generatedSource = writer.getSource();
+        SourceAssert.compare(new File("./src/test/resources/reference", referenceName),
+                generatedSource);
+        
+        // make sure it compiles too
+        SimpleCompiler compiler = new SimpleCompiler();
+        compiler.cook(generatedSource);
+
     }
     
 }

@@ -513,28 +513,33 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
     @Override
     public void exitVarID(VarIDContext ctx) {
         String name = ctx.ID().getText();
-        Symbol symbol = getScope(ctx).get(name);
-        
-        switch( symbol.getType() ) {
-            case SOURCE_IMAGE:
-                // Source image with default pixel / band positions
-                set(ctx, new GetSourceValue(name, ImagePos.DEFAULT));
-                break;
-                
-            case LIST:
-                set(ctx, new Variable(name, JiffleType.LIST));
-                break;
-                
-            case LOOP_VAR:
-            case SCALAR:
-                set(ctx, new Variable(name, JiffleType.D));
-                break;
-                
-            default:  
-                // DEST_IMAGE and UNKNOWN
-                // This should have been picked up in earlier stages
-                throw new IllegalArgumentException(
-                        "Compiler error: invalid type for variable" + name);
+        // variable or constant?
+        if (ConstantLookup.isDefined(name)) {
+            set (ctx, new DoubleLiteral(Double.toString(ConstantLookup.getValue(name))));
+        } else {
+            Symbol symbol = getScope(ctx).get(name);
+            
+            switch( symbol.getType() ) {
+                case SOURCE_IMAGE:
+                    // Source image with default pixel / band positions
+                    set(ctx, new GetSourceValue(name, ImagePos.DEFAULT));
+                    break;
+                    
+                case LIST:
+                    set(ctx, new Variable(name, JiffleType.LIST));
+                    break;
+                    
+                case LOOP_VAR:
+                case SCALAR:
+                    set(ctx, new Variable(name, JiffleType.D));
+                    break;
+                    
+                default:  
+                    // DEST_IMAGE and UNKNOWN
+                    // This should have been picked up in earlier stages
+                    throw new IllegalArgumentException(
+                            "Compiler error: invalid type for variable" + name);
+            } 
         }
     }
 

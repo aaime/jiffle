@@ -220,16 +220,9 @@ public class ProgressListenerDemo {
         }
 
         @Override
-        protected Double getDefaultValue(int index) {
-            return null;
-        }
-
-        @Override
         public long getNumPixels() {
             return NUM_PIXELS;
         }
-        
-        
 
     }
 }

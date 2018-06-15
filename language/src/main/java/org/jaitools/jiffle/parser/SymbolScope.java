@@ -132,8 +132,7 @@ public abstract class SymbolScope {
         } else if (enclosingScope != null) {
             return enclosingScope.get(name);
         } else {
-            throw new JiffleParserException(
-                    "Unknown symbol " + name + " in scope " + getName());
+            throw new JiffleParserException("Unknown symbol " + name);
         }
     }
 

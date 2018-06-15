@@ -177,6 +177,11 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
             if (identifiedAtomContext instanceof VarIDContext) {
                 VarIDContext var = (VarIDContext) identifiedAtomContext;
                 String varName = var.ID().getSymbol().getText();
+                // is it a wel known constant?
+                if (ConstantLookup.isDefined(varName)) {
+                    return JiffleType.D;
+                }
+                // otherwise search among variables
                 Symbol symbol = getScope(ctx).get(varName);
                 if (symbol.getType() == null || symbol.getType() == Symbol.Type.UNKNOWN) {
                     return JiffleType.UNKNOWN;
@@ -304,28 +309,32 @@ public class ExpressionWorker extends PropertyWorker<JiffleType> {
 
     @Override
     public void exitVarID(VarIDContext ctx) {
-        // We should be processing the RHS of an expression to
-        // be here
+        // We should be processing the RHS of an expression to be here
         String name = ctx.ID().getText();
-        SymbolScope scope = getScope(ctx);
         
-        // TODO - temp debug
-        Symbol symbol = scope.get(name);
-        
-        switch (symbol.getType()) {
-            case LIST:
-                set(ctx, JiffleType.LIST);
-                break;
+        // is this a constant reference or a variable reference?
+        if (ConstantLookup.isDefined(name)) {
+            set(ctx, JiffleType.D);
+        } else {
+            SymbolScope scope = getScope(ctx);
 
-            default:
-                set(ctx, JiffleType.UNKNOWN);
-                break;
-                
-        }
+            // TODO - temp debug
+            Symbol symbol = scope.get(name);
 
-        Symbol.Type type = scope.get(name).getType();
-        if (type == Symbol.Type.UNKNOWN) {
-            messages.error(ctx.ID().getSymbol(), Errors.UNINIT_VAR + ": " + name);
+            switch (symbol.getType()) {
+                case LIST:
+                    set(ctx, JiffleType.LIST);
+                    break;
+
+                default:
+                    set(ctx, JiffleType.UNKNOWN);
+                    break;
+            }
+
+            Symbol.Type type = scope.get(name).getType();
+            if (type == Symbol.Type.UNKNOWN) {
+                messages.error(ctx.ID().getSymbol(), Errors.UNINIT_VAR + ": " + name);
+            } 
         }
     }
     
