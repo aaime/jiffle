@@ -1,0 +1,39 @@
+package org.jaitools.jiffle.runtime;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    double v_xc = Double.NaN;
+    double v_yc = Double.NaN;
+
+    public JiffleDirectRuntimeImpl() {
+        super(new String[] {"xc", "yc"});
+    }
+
+    protected void initImageScopeVars() {
+        if (Double.isNaN(v_xc)) {
+            v_xc = getWidth() / 2.0;
+        }
+        if (Double.isNaN(v_yc)) {
+            v_yc = getHeight() / 2.0;
+        }
+        _imageScopeVarsInitialized = true;
+    }
+
+    public void evaluate(double _x, double _y) {
+        if (!isWorldSet()) {
+            setDefaultBounds();
+        }
+        if (!_imageScopeVarsInitialized) {
+            initImageScopeVars();
+        }
+        _stk.clear();
+
+        double v_dx = (_x - v_xc) / v_xc;
+        double v_dy = (_y - v_yc) / v_yc;
+        double v_d = Math.sqrt(Math.pow(v_dx, 2.0) + Math.pow(v_dy, 2.0));
+        writeToImage("result", _x, _y, 0, Math.sin(8.0 * 3.141592653589793 * v_d));
+    }
+}
