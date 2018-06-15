@@ -18,4 +18,8 @@ public class IntLiteral extends ScalarLiteral {
         super(checkValue(value));
     }
 
+    @Override
+    public Expression forceDouble() {
+        return new DoubleLiteral(value);
+    }
 }

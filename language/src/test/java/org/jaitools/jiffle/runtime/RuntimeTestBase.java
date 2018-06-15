@@ -106,7 +106,7 @@ public abstract class RuntimeTestBase {
         imageParams.put("src", Jiffle.ImageRole.SOURCE);
 
         Jiffle jiffle = new Jiffle(script, imageParams);
-        runtimeInstance = (JiffleDirectRuntime) jiffle.getRuntimeInstance();
+        runtimeInstance = jiffle.getRuntimeInstance();
 
         testRuntime(srcImg, runtimeInstance, evaluator);
     }

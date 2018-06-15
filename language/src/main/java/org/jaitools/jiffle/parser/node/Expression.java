@@ -19,10 +19,6 @@ public abstract class Expression implements Node {
     }
 
     public Expression forceDouble() {
-        // inside expressions all literals must be doubles
-        if (this instanceof IntLiteral) {
-            return new DoubleLiteral(((IntLiteral) this).value);
-        }
         return this;
     }
 
