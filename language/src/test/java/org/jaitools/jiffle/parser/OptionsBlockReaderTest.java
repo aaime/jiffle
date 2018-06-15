@@ -122,11 +122,18 @@ public class OptionsBlockReaderTest extends ParserTestBase {
                         Message.Level.ERROR, 1, 11, "Invalid value (foo) for option outside"));
     }
 
+    @Test
+    public void constantUsage() throws Exception {
+        script = "options { outside = M_PI; } dest = 42;";
+
+        parseOptions(script);
+        assertMessages();
+        expectedOptions.put("outside", Double.toString(Math.PI));
+        assertOptions();
+    }
+
     private void assertOptions() {
-        assertEquals(expectedOptions.size(), options.size());
-        for (String key : expectedOptions.keySet()) {
-            assertTrue(expectedOptions.get(key).equals(options.get(key)));
-        }
+        assertThat(options, CoreMatchers.equalTo(expectedOptions));
     }
 
     private void assertMessages(Message... expectedMessages) {

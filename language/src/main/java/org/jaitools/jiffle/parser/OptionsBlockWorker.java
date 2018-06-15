@@ -44,8 +44,16 @@ public class OptionsBlockWorker extends BaseWorker {
         try {
             
             if (OptionLookup.isValidValue(name, value)) {
-                if ("NaN".equals(value) || "null".equals(value)) {
+                if ("null".equals(value)) {
                     value = "Double.NaN";
+                } else if (ConstantLookup.isDefined(value)) {
+                    double constantValue = ConstantLookup.getValue(value);
+                    if (Double.isNaN(constantValue)) {
+                        value = "Double.NaN";
+                    } else {
+                        value = Double.toString(constantValue);
+                    }
+                    
                 }
                 options.put(name, value);
             } else {
