@@ -80,8 +80,8 @@ public class JiffleOpImage extends OpImage {
             jiffle.compile();
             runtime = (JiffleIndirectRuntime) jiffle.getRuntimeInstance(Jiffle.RuntimeModel.INDIRECT);
             
-            for (String varName : sourceImages.keySet()) {
-                runtime.setSourceImage(varName);
+            for (Map.Entry<String, RenderedImage> entry : sourceImages.entrySet()) {
+                runtime.setSourceImage(entry.getKey(), entry.getValue());
             }
             
             if (destBounds == null) {
