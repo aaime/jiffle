@@ -178,8 +178,11 @@ public class RuntimeModelWorker extends PropertyWorker<Node> {
         
         GlobalVars globals = initBlockContext == null ?
                 new GlobalVars() : getAsType(initBlockContext, GlobalVars.class);
+        GlobalScope globalScope = (GlobalScope) scopes.get(ctx);
+        Set<String> sourceImages = globalScope.getByType(Symbol.Type.SOURCE_IMAGE);
+        Set<String> destImages = globalScope.getByType(Symbol.Type.DEST_IMAGE);
 
-        this.script = new Script(options, globals, stmts);
+        this.script = new Script(options, sourceImages, destImages, globals, stmts);
         set(ctx, this.script);
     }
     

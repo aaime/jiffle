@@ -5,12 +5,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    SourceImage s_dtm;
+    DestinationImage d_result;
 
     public JiffleDirectRuntimeImpl() {
         super(new String[] {});
     }
 
     protected void initImageScopeVars() {
+        s_dtm = (SourceImage) _images.get("dtm");
+        d_result= (DestinationImage) _destImages.get("result");
         _imageScopeVarsInitialized = true;
     }
 
@@ -25,15 +29,15 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
 
         double v_aData = 0.0;
         double v_bData = 0.0;
-        double v_centralValue = readFromImage("dtm", _x, _y, 0);
-        double v_nValue = readFromImage("dtm", _x + 0.0, _y + -1.0, 0);
-        double v_sValue = readFromImage("dtm", _x + 0.0, _y + 1.0, 0);
-        double v_wValue = readFromImage("dtm", _x + -1.0, _y + 0.0, 0);
-        double v_eValue = readFromImage("dtm", _x + 1.0, _y + 0.0, 0);
+        double v_centralValue = s_dtm.read(_x, _y, 0);
+        double v_nValue = s_dtm.read(_x + 0.0, _y + -1.0, 0);
+        double v_sValue = s_dtm.read(_x + 0.0, _y + 1.0, 0);
+        double v_wValue = s_dtm.read(_x + -1.0, _y + 0.0, 0);
+        double v_eValue = s_dtm.read(_x + 1.0, _y + 0.0, 0);
         double v_nv = -9999.0;
         double v_aspect = v_nv;
         double v_PI = 3.141592653589793;
-        writeToImage("result", _x, _y, 0, v_nValue);
+        d_result.write(_x, _y, 0, v_nValue);
         if (_FN.isTrue(_FN.NE(v_centralValue, v_nv))) {
             double v_sIsNovalue = _FN.EQ(v_sValue, v_nv);
             double v_nIsNovalue = _FN.EQ(v_nValue, v_nv);
@@ -112,9 +116,9 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
                     }
                 }
             }
-            writeToImage("result", _x, _y, 0, Math.round(v_aspect));
+            d_result.write(_x, _y, 0, Math.round(v_aspect));
         } else {
-            writeToImage("result", _x, _y, 0, v_nv);
+            d_result.write(_x, _y, 0, v_nv);
         }
     }
 }

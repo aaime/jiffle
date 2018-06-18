@@ -2,6 +2,8 @@ package org.jaitools.jiffle.parser.node;
 
 import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.JiffleProperties;
+import org.jaitools.jiffle.runtime.AbstractDirectRuntime;
+import org.jaitools.jiffle.runtime.AbstractIndirectRuntime;
 
 import java.util.Arrays;
 
@@ -131,5 +133,16 @@ public class SourceWriter {
             }
         }
         return this.baseClassName;
+    }
+
+    /**
+     * Returns true if the runtime is either {@link org.jaitools.jiffle.runtime.AbstractDirectRuntime}
+     * or {@link org.jaitools.jiffle.runtime.AbstractIndirectRuntime}
+     * @return
+     */
+    public boolean isInternalBaseClass() {
+        String baseClassName = getBaseClassName();
+        return AbstractDirectRuntime.class.getName().equals(baseClassName) ||
+                AbstractIndirectRuntime.class.getName().equals(baseClassName);
     }
 }

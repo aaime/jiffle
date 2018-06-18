@@ -5,12 +5,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    SourceImage s_world;
+    DestinationImage d_nextworld;
 
     public JiffleDirectRuntimeImpl() {
         super(new String[] {});
     }
 
     protected void initImageScopeVars() {
+        s_world = (SourceImage) _images.get("world");
+        d_nextworld= (DestinationImage) _destImages.get("nextworld");
         _imageScopeVarsInitialized = true;
     }
 
@@ -36,10 +40,10 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
                 double v_xx = _x + v_ix;
                 v_xx = (_stk.push(_FN.sign(_FN.LT(v_xx, 0))) == null ? Double.NaN : (_stk.peek() != 0 ? (getWidth() - 1.0) : (v_xx)));
                 v_xx = (_stk.push(_FN.sign(_FN.GE(v_xx, getWidth()))) == null ? Double.NaN : (_stk.peek() != 0 ? (0) : (v_xx)));
-                v_n += readFromImage("world", v_xx, v_yy, 0);
+                v_n += s_world.read(v_xx, v_yy, 0);
             }
         }
-        v_n -= readFromImage("world", _x, _y, 0);
-        writeToImage("nextworld", _x, _y, 0, _FN.OR((_FN.EQ(v_n, 3)), (_FN.AND(readFromImage("world", _x, _y, 0), _FN.EQ(v_n, 2)))));
+        v_n -= s_world.read(_x, _y, 0);
+        d_nextworld.write(_x, _y, 0, _FN.OR((_FN.EQ(v_n, 3)), (_FN.AND(s_world.read(_x, _y, 0), _FN.EQ(v_n, 2)))));
     }
 }

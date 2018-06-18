@@ -276,7 +276,7 @@ public class JiffleBuilder {
      * in the script.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -300,7 +300,7 @@ public class JiffleBuilder {
      * in the script.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -330,7 +330,7 @@ public class JiffleBuilder {
      * image will be 0.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -352,7 +352,7 @@ public class JiffleBuilder {
      * image will be 0.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -376,7 +376,7 @@ public class JiffleBuilder {
      * in the script.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -399,7 +399,7 @@ public class JiffleBuilder {
      * in the script.
      * <p>
      * Note: a {@code JiffleBuilder} maintains only {@code WeakReferences}
-     * to all source images and any destination images passed to it via
+     * to all source images and any destination _images passed to it via
      * the {@link #dest(String, WritableRenderedImage)} method. However,
      * a strong reference is stored to any destination images created with this
      * method. This can be freed later by calling {@link #clear()} or
@@ -498,7 +498,7 @@ public class JiffleBuilder {
      * @see org.jaitools.jiffle.runtime.JiffleRuntime#setDefaultTransform(CoordinateTransform) 
      */
     public JiffleBuilder defaultTransform(CoordinateTransform transform) {
-        _defaultTransform = transform == null ? new IdentityCoordinateTransform() : transform;
+        _defaultTransform = transform == null ? IdentityCoordinateTransform.INSTANCE : transform;
         return this;
     }
     

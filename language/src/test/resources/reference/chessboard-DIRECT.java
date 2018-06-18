@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    DestinationImage d_result;
     double v_len = Double.NaN;
     double v_square = Double.NaN;
     double v_edge_pos = Double.NaN;
@@ -14,6 +15,7 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
     }
 
     protected void initImageScopeVars() {
+        d_result= (DestinationImage) _destImages.get("result");
         if (Double.isNaN(v_len)) {
             v_len = (_stk.push(_FN.sign(_FN.GT(getWidth(), getHeight()))) == null ? Double.NaN : (_stk.peek() != 0 ? (getWidth()) : (getHeight())));
         }
@@ -38,6 +40,6 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
         double v_odd_row = _FN.EQ(Math.floor(_y / v_square) % 2.0, 1);
         double v_odd_col = _FN.EQ(Math.floor(_x / v_square) % 2.0, 1);
         double v_inside = _FN.AND(_FN.LT(_x, v_edge_pos), _FN.LT(_y, v_edge_pos));
-        writeToImage("result", _x, _y, 0, (_stk.push(_FN.sign(v_inside)) == null ? Double.NaN : (_stk.peek() != 0 ? ((_FN.XOR(v_odd_row, v_odd_col))) : (Double.NaN))));
+        d_result.write(_x, _y, 0, (_stk.push(_FN.sign(v_inside)) == null ? Double.NaN : (_stk.peek() != 0 ? ((_FN.XOR(v_odd_row, v_odd_col))) : (Double.NaN))));
     }
 }

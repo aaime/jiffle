@@ -30,7 +30,6 @@ import java.awt.image.RenderedImage;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -77,12 +76,6 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     /** Number of pixels calculated from bounds and pixel dimensions. */
     private long _numPixels;
 
-    /**
-     * Maps source image variable names ({@link String}) to image
-     * iterators ({@link RandomIter}).
-     */
-    protected Map readers = new LinkedHashMap();
-
     /*
      * Note: not using generics here because they are not
      * supported by the Janino compiler.
@@ -91,55 +84,65 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     /**
      * Maps image variable names ({@link String}) to images
      * ({@link RenderedImage}).
-     *
      */
-    protected Map images = new HashMap();
-    
-    private class TransformInfo {
+    protected Map<String, SourceImage> _images = new HashMap();
+
+    protected class SourceImage {
+        final String imageName;
+        final RenderedImage image;
         CoordinateTransform transform;
-        boolean isDefault;
-    }
-
-    /** 
-     * A default transform to apply to all images set without an explicit
-     * transform. 
-     */
-    private CoordinateTransform _defaultTransform = new IdentityCoordinateTransform();
-    
-    /** World to image coordinate transforms with image name as key. */
-    private Map<String, TransformInfo> _transformLookup;
-
-    /** 
-     * Holds information about an image-scope variable. 
-     * This class is only public to work around a problem in the 
-     * Janino compiler involving private nested classes. It is
-     * not intended for client use.
-     */
-    public class ImageScopeVar {
+        boolean defaultTransform;
+        final RandomIter iterator;
+        final int minX;
+        final int maxX;
+        final int minY;
+        final int maxY;
         
-        /** Variable name. */
-        public String name;
+        public SourceImage(String imageName, RenderedImage image) {
+            this.imageName = imageName;
+            this.image = image;
+            this.minX = image.getMinX();
+            this.maxX = image.getMinX() + image.getWidth();
+            this.minY = image.getMinY();
+            this.maxY = image.getMinY() + image.getHeight();
+            this.iterator = RandomIterFactory.create(image, null);
+        }
         
-        /** Whether a default value was provided in the script init block. */
-        public boolean hasDefaultValue;
+        public double read(double x, double y, int band) {
+            int posx = (int) x;
+            int posy = (int) y;
+            if (transform != null && !(transform instanceof IdentityCoordinateTransform)) {
+                Point imgPos = transform.worldToImage(x, y, null);
+                posx = imgPos.x;
+                posy = imgPos.y;
+            }
 
-        /** Whether a run-time value has been set. */
-        public boolean isSet;
+            final boolean inside = posx >= minX && posx < maxX && posy >= minY && posy < maxY;
+            if (!inside) {
+                if (_outsideValueSet) {
+                    return _outsideValue;
+                } else {
+                    throw new JiffleRuntimeException( String.format(
+                            "Position %.4f %.4f is outside bounds of image: %s",
+                            x, y, imageName));
+                }
+            }
 
-        /** The current value. */
-        public double value;
+            return iterator.getSampleDouble(posx, posy, band);
+        }
 
-        /**
-         * Constructor.
-         * @param name variable name
-         * @param hasDefaultValue whether a default value is defined in the script
-         */
-        public ImageScopeVar(String name, boolean hasDefaultValue) {
-            this.name = name;
-            this.hasDefaultValue = hasDefaultValue;
+        public void setTransform(CoordinateTransform transform, boolean defaultTransform)
+                throws WorldNotSetException {
+            if (transform != null && !isWorldSet()) {
+                throw new WorldNotSetException();
+            }
+            this.transform = transform;
+            this.defaultTransform = defaultTransform;
         }
     }
-
+    
+    
+    
     // Used to size / resize the _vars array as required
     private static final int VAR_ARRAY_CHUNK = 100;
     
@@ -161,6 +164,8 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * Provides runtime function support.
      */
     protected final JiffleFunctions _FN;
+    
+    protected CoordinateTransform _defaultTransform;
 
     public AbstractJiffleRuntime() {
         this(new String[0]);
@@ -174,7 +179,6 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
         _FN = new JiffleFunctions();
         _stk = new IntegerStack();
         
-        _transformLookup = new HashMap<String, TransformInfo>();
         _xres = Double.NaN;
         _yres = Double.NaN;
         
@@ -289,9 +293,7 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
         try {
             field.setAccessible(true);
             field.setDouble(this, value == null ? Double.NaN : value);
-            if (value == null) {
-                _imageScopeVarsInitialized = false;
-            }
+            _imageScopeVarsInitialized = false;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -372,56 +374,19 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
     }
     
     /**
-     * Sets a coordinate transform to use with the image represented by
-     * {@code imageVarName}.
-     * 
-     * @param imageVarName variable name
-     * @param tr the transform or {@code null} for the default transform
-     * 
-     * @throws WorldNotSetException if world bounds and resolution are not yet set
-     */
-    protected void setTransform(String imageVarName, CoordinateTransform tr) 
-            throws WorldNotSetException {
-        
-        TransformInfo info = new TransformInfo();
-        
-        if (tr == null) {
-            info.transform = _defaultTransform;
-            info.isDefault = true;
-            
-        } else {
-            if (!isWorldSet()) {
-                throw new WorldNotSetException();
-            }
-            
-            info.transform = tr;
-            info.isDefault = false;
-        }
-        
-        _transformLookup.put(imageVarName, info);
-    }
-
-    /**
      * {@inheritDoc}
      */
     public void setDefaultTransform(CoordinateTransform tr) throws JiffleException {
         if (tr != null) {
             if (!isWorldSet()) {
-                throw new JiffleException(
-                        "Setting a default coordinate tranform without having "
-                        + "first set the world bounds and resolution");
+                throw new WorldNotSetException();
             }
-            
-        } else {
-            tr = new IdentityCoordinateTransform();
         }
         _defaultTransform = tr;
-        
-        for (String name : _transformLookup.keySet()) {
-            TransformInfo info = _transformLookup.get(name);
-            if (info.isDefault) {
-                info.transform = _defaultTransform;
-                _transformLookup.put(name, info);
+
+        for (SourceImage sourceImage : _images.values()) {
+            if (sourceImage.defaultTransform) {
+                sourceImage.setTransform(tr, true);
             }
         }
     }
@@ -437,7 +402,12 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * @return the coordinate transform
      */
     protected CoordinateTransform getTransform(String imageVarName) {
-        return _transformLookup.get(imageVarName).transform;
+        CoordinateTransform tr = _images.get(imageVarName).transform;
+        if (tr == null) {
+            tr = IdentityCoordinateTransform.INSTANCE;
+        }
+        
+        return tr;
     }
 
     /**
@@ -510,34 +480,8 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      * {@inheritDoc}
      */
     public double readFromImage(String srcImageName, double x, double y, int band) {
-        boolean inside = true;
-        RenderedImage img = (RenderedImage) images.get(srcImageName);
-        CoordinateTransform tr = getTransform(srcImageName);
-
-        Point imgPos = tr.worldToImage(x, y, null);
-
-        int xx = imgPos.x - img.getMinX();
-        if (xx < 0 || xx >= img.getWidth()) {
-            inside = false;
-        } else {
-            int yy = imgPos.y - img.getMinY();
-            if (yy < 0 || yy >= img.getHeight()) {
-                inside = false;
-            }
-        }
-
-        if (!inside) {
-            if (_outsideValueSet) {
-                return _outsideValue;
-            } else {
-                throw new JiffleRuntimeException( String.format(
-                        "Position %.4f %.4f is outside bounds of image: %s",
-                        x, y, srcImageName));
-            }
-        }
-
-        RandomIter iter = (RandomIter) readers.get(srcImageName);
-        return iter.getSampleDouble(imgPos.x, imgPos.y, band);
+        SourceImage sourceImage = _images.get(srcImageName);
+        return sourceImage.read(x, y, band);
     }
 
     /**
@@ -558,7 +502,6 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
             throws JiffleException {
         try {
             doSetSourceImage(varName, image, tr);
-
         } catch (WorldNotSetException ex) {
             throw new JiffleException(String.format(
                     "Setting a coordinate tranform for a source (%s) without"
@@ -568,10 +511,11 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
 
     private void doSetSourceImage(String varName, RenderedImage image, CoordinateTransform tr)
             throws WorldNotSetException {
-
-        images.put(varName, image);
-        readers.put(varName, RandomIterFactory.create(image, null));
-        setTransform(varName, tr);
+        SourceImage sourceImage = new SourceImage(varName, image);
+        boolean defaultTransform = tr == null;
+        CoordinateTransform tt = defaultTransform ? _defaultTransform : tr;
+        sourceImage.setTransform(tt, defaultTransform);
+        _images.put(varName, sourceImage);
     }
 
     /**
@@ -582,9 +526,11 @@ public abstract class AbstractJiffleRuntime implements JiffleRuntime {
      *
      * @return images keyed by variable name
      */
-    public Map getImages() {
+    public Map<String, RenderedImage> get_images() {
         Map copy = new HashMap();
-        copy.putAll(images);
+        for (SourceImage sourceImage : _images.values()) {
+            copy.put(sourceImage.imageName, sourceImage.image);
+        }
         return copy;
     }
 

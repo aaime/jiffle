@@ -5,12 +5,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    SourceImage s_dtm;
+    DestinationImage d_result;
 
     public JiffleDirectRuntimeImpl() {
         super(new String[] {});
     }
 
     protected void initImageScopeVars() {
+        s_dtm = (SourceImage) _images.get("dtm");
+        d_result= (DestinationImage) _destImages.get("result");
         _imageScopeVarsInitialized = true;
     }
 
@@ -34,7 +38,7 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
             final int _lodx = (int) (-1);
             final int _hi_lodx = (int) (1);
             for(int v_dx = _lodx; v_dx <= _hi_lodx; v_dx++) {
-                double v_neighValue = readFromImage("dtm", _x + v_dx, _y + v_dy, 0);
+                double v_neighValue = s_dtm.read(_x + v_dx, _y + v_dy, 0);
                 if (_FN.isTrue(_FN.isnull(v_neighValue))) {
                     v_stop = 1.0;
                 } else {
@@ -47,36 +51,36 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
             }
         }
         if (_FN.isTrue(v_stop)) {
-            writeToImage("result", _x, _y, 0, -9999.0);
+            d_result.write(_x, _y, 0, -9999.0);
         } else {
             if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 0), _FN.EQ(v_minRow, 0)))) {
-                writeToImage("result", _x, _y, 0, 0);
+                d_result.write(_x, _y, 0, 0);
             } else {
                 if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 1), _FN.EQ(v_minRow, 0)))) {
-                    writeToImage("result", _x, _y, 0, 1);
+                    d_result.write(_x, _y, 0, 1);
                 } else {
                     if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 1), _FN.EQ(v_minRow, -1)))) {
-                        writeToImage("result", _x, _y, 0, 2);
+                        d_result.write(_x, _y, 0, 2);
                     } else {
                         if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 0), _FN.EQ(v_minRow, -1)))) {
-                            writeToImage("result", _x, _y, 0, 3);
+                            d_result.write(_x, _y, 0, 3);
                         } else {
                             if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, -1), _FN.EQ(v_minRow, -1)))) {
-                                writeToImage("result", _x, _y, 0, 4);
+                                d_result.write(_x, _y, 0, 4);
                             } else {
                                 if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, -1), _FN.EQ(v_minRow, 0)))) {
-                                    writeToImage("result", _x, _y, 0, 5);
+                                    d_result.write(_x, _y, 0, 5);
                                 } else {
                                     if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, -1), _FN.EQ(v_minRow, 1)))) {
-                                        writeToImage("result", _x, _y, 0, 6);
+                                        d_result.write(_x, _y, 0, 6);
                                     } else {
                                         if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 0), _FN.EQ(v_minRow, 1)))) {
-                                            writeToImage("result", _x, _y, 0, 7);
+                                            d_result.write(_x, _y, 0, 7);
                                         } else {
                                             if (_FN.isTrue(_FN.AND(_FN.EQ(v_minCol, 1), _FN.EQ(v_minRow, 1)))) {
-                                                writeToImage("result", _x, _y, 0, 8);
+                                                d_result.write(_x, _y, 0, 8);
                                             } else {
-                                                writeToImage("result", _x, _y, 0, 10);
+                                                d_result.write(_x, _y, 0, 10);
                                             }
                                         }
                                     }

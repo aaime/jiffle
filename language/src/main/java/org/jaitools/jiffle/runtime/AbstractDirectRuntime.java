@@ -30,53 +30,77 @@ import java.awt.Rectangle;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRenderedImage;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.media.jai.iterator.RandomIter;
 import javax.media.jai.iterator.RandomIterFactory;
 import javax.media.jai.iterator.WritableRandomIter;
 
 import org.jaitools.jiffle.JiffleException;
 
-
 /**
- * The default abstract base class for runtime classes that implement
- * direct evaluation.
- * 
+ * The default abstract base class for runtime classes that implement direct evaluation.
+ *
  * @author Michael Bedward
  * @since 0.1
  * @version $Id$
  */
-public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implements JiffleDirectRuntime {
+public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime
+        implements JiffleDirectRuntime {
 
     private static final double EPS = 1.0e-10d;
-    
-    /**
-     * Maps destination image variable names ({@link String} to
-     * image iterators ({@link WritableRandomIter}).
-     */
-    protected Map writers = new LinkedHashMap();
 
-    /**
-     * Creates a new instance and initializes script-option variables.
-     */
+    protected Map<String, DestinationImage> _destImages = new HashMap<>();
+
+    protected class DestinationImage {
+        final String imageName;
+        final WritableRenderedImage image;
+        CoordinateTransform transform;
+        boolean defaultTransform;
+        final WritableRandomIter iterator;
+
+        public DestinationImage(String imageName, WritableRenderedImage image) {
+            this.imageName = imageName;
+            this.image = image;
+            this.iterator = RandomIterFactory.createWritable(image, null);
+        }
+
+        public void write(double x, double y, int band, double value) {
+            int posx, posy;
+            if (transform != null && !(transform instanceof IdentityCoordinateTransform)) {
+                Point imgPos = transform.worldToImage(x, y, null);
+                posx = imgPos.x;
+                posy = imgPos.y;
+            } else {
+                posx = (int) x;
+                posy = (int) y;
+            }
+
+            iterator.setSample(posx, posy, band, value);
+        }
+
+        public void setTransform(CoordinateTransform transform, boolean defaultTransform)
+                throws WorldNotSetException {
+            if (transform != null && !isWorldSet()) {
+                throw new WorldNotSetException();
+            }
+            this.transform = transform;
+            this.defaultTransform = defaultTransform;
+        }
+    }
+
+    /** Creates a new instance and initializes script-option variables. */
     public AbstractDirectRuntime() {
         super(new String[0]);
         initOptionVars();
     }
 
-    /**
-     * Creates a new instance and initializes script-option variables.
-     */
+    /** Creates a new instance and initializes script-option variables. */
     public AbstractDirectRuntime(String[] variableNames) {
         super(variableNames);
         initOptionVars();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     public void setDestinationImage(String varName, WritableRenderedImage image) {
         try {
             doSetDestinationImage(varName, image, null);
@@ -84,101 +108,116 @@ public abstract class AbstractDirectRuntime extends AbstractJiffleRuntime implem
             // No exception can be caused by a null transform
         }
     }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public void setDestinationImage(String varName, WritableRenderedImage image, 
-            CoordinateTransform tr) throws JiffleException {
-        
+
+    /** {@inheritDoc} */
+    public void setDestinationImage(
+            String varName, WritableRenderedImage image, CoordinateTransform tr)
+            throws JiffleException {
+
         try {
             doSetDestinationImage(varName, image, tr);
-            
+
         } catch (WorldNotSetException ex) {
-            throw new JiffleException(String.format(
-                    "Setting a coordinate tranform for a destination (%s) without"
-                    + "having first set the world bounds and resolution", varName));
+            throw new JiffleException(
+                    String.format(
+                            "Setting a coordinate tranform for a destination (%s) without"
+                                    + "having first set the world bounds and resolution",
+                            varName));
         }
     }
-    
-    private void doSetDestinationImage(String varName, WritableRenderedImage image, 
-            CoordinateTransform tr) throws WorldNotSetException {
-        
-        images.put(varName, image);
-        writers.put(varName, RandomIterFactory.createWritable(image, null));
-        setTransform(varName, tr);
+
+    private void doSetDestinationImage(
+            String varName, WritableRenderedImage image, CoordinateTransform tr)
+            throws WorldNotSetException {
+        DestinationImage destinationImage = new DestinationImage(varName, image);
+        boolean defaultTransform = tr == null;
+        CoordinateTransform tt = defaultTransform ? _defaultTransform : tr;
+        destinationImage.setTransform(tt, defaultTransform);
+        _destImages.put(varName, destinationImage);
     }
-    
-    /**
-     * {@inheritDoc}
-     */
+
+    /** {@inheritDoc} */
     public void evaluateAll(JiffleProgressListener pl) {
         JiffleProgressListener listener = pl == null ? new NullProgressListener() : pl;
-        
+
         if (!isWorldSet()) {
             setDefaultBounds();
         }
 
         final long numPixels = getNumPixels();
         listener.setTaskSize(numPixels);
-        
+
         long count = 0;
         long sinceLastUpdate = 0;
         final long updateInterval = listener.getUpdateInterval();
-        
+
         final double minX = getMinX();
         final double maxX = getMaxX();
         final double resX = getXRes();
-        
+
         final double minY = getMinY();
         final double maxY = getMaxY();
         final double resY = getYRes();
-        
+
         listener.start();
         for (double y = minY; y < maxY - EPS; y += resY) {
             for (double x = minX; x < maxX - EPS; x += resX) {
                 evaluate(x, y);
-                
-                count++ ;
+
+                count++;
                 sinceLastUpdate++;
                 if (sinceLastUpdate >= updateInterval) {
-                    listener.update( count );
+                    listener.update(count);
                     sinceLastUpdate = 0;
                 }
             }
         }
         listener.finish();
     }
-    
-    /**
-     * {@inheritDoc}
-     */
+
+    /** {@inheritDoc} */
     public void writeToImage(String destImageName, double x, double y, int band, double value) {
-        WritableRandomIter iter = (WritableRandomIter) writers.get(destImageName);
-        CoordinateTransform tr = getTransform(destImageName);
-        Point imgPos = tr.worldToImage(x, y, null);
-        iter.setSample(imgPos.x, imgPos.y, band, value);
+        DestinationImage image = _destImages.get(destImageName);
+        image.write(x, y, band, value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     public void setDefaultBounds() {
         RenderedImage refImage = null;
         String imageName = null;
 
-        if (!writers.isEmpty()) {
-            imageName = (String) writers.keySet().iterator().next();
-            refImage = (RenderedImage) images.get(imageName);
+        if (!_destImages.isEmpty()) {
+            imageName = (String) _destImages.keySet().iterator().next();
+            refImage = _destImages.get(imageName).image;
         } else {
-            imageName = (String) readers.keySet().iterator().next();
-            refImage = (RenderedImage) images.get(imageName);
+            imageName = (String) _images.keySet().iterator().next();
+            refImage = _images.get(imageName).image;
         }
 
-        Rectangle rect = new Rectangle(
-                refImage.getMinX(), refImage.getMinY(),
-                refImage.getWidth(), refImage.getHeight());
+        Rectangle rect =
+                new Rectangle(
+                        refImage.getMinX(), refImage.getMinY(),
+                        refImage.getWidth(), refImage.getHeight());
 
         setWorldByResolution(rect, 1, 1);
+    }
+
+    public void setDefaultTransform(CoordinateTransform tr) throws JiffleException {
+        super.setDefaultTransform(tr);
+
+        for (DestinationImage destImage : _destImages.values()) {
+            if (destImage.defaultTransform) {
+                destImage.setTransform(tr, true);
+            }
+        }
+    }
+
+    @Override
+    public Map get_images() {
+        Map<String, RenderedImage> images = super.get_images();
+        for (DestinationImage destImage : _destImages.values()) {
+            images.put(destImage.imageName, destImage.image);
+        }
+        return images;
     }
 }

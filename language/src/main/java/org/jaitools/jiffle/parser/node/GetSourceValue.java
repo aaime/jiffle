@@ -29,6 +29,11 @@ public class GetSourceValue extends Expression {
     }
 
     public void write(SourceWriter w) {
-        w.append("readFromImage(\"").append(varName).append("\", ").append(pos).append(")");
+        if (w.isInternalBaseClass()) {
+            w.append("s_").append(varName).append(".read(").append(pos).append(")");
+        } else {
+            w.append("readFromImage(\"").append(varName).append("\", ").append(pos).append(")");                
+        }
+        
     }
 }

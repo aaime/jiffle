@@ -38,7 +38,13 @@ import java.awt.Point;
  * @version $Id$
  */
 public class IdentityCoordinateTransform implements CoordinateTransform {
+
+    public static final CoordinateTransform INSTANCE = new IdentityCoordinateTransform();
     
+    private IdentityCoordinateTransform() {
+        // singleton
+    }
+
     /**
      * {@inheritDoc}
      */

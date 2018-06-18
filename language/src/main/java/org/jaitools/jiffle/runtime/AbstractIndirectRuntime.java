@@ -81,43 +81,14 @@ public abstract class AbstractIndirectRuntime extends AbstractJiffleRuntime impl
             throws WorldNotSetException {
         
         destImageName = varName;
-        setTransform(varName, tr);
-    }
-
-    public void setSourceImage(String varName) {
-        try {
-            doSetSourceImage(varName, null);
-        } catch (WorldNotSetException ex) {
-            // Passing a null transform does not cause an Exception
-        }
-    }
-
-    public void setSourceImage(String varName, CoordinateTransform tr) 
-            throws JiffleException {
-        
-        try {
-            doSetSourceImage(varName, tr);
-        } catch (WorldNotSetException ex) {
-            throw new JiffleException(String.format(
-                    "Setting a coordinate tranform for a source (%s) without"
-                    + "having first set the world bounds and resolution", varName));
-        }
-    }
-
-    private void doSetSourceImage(String varName, CoordinateTransform tr)
-            throws WorldNotSetException {
-        
-        sourceImageNames.add(varName);
-        setTransform(varName, tr);
     }
 
     /**
      * {@inheritDoc}
      */
     public void setDefaultBounds() {
-
-        String imageName = (String) readers.keySet().iterator().next();
-        RenderedImage refImage = (RenderedImage) images.get(imageName);
+        String imageName = _images.keySet().iterator().next();
+        RenderedImage refImage = _images.get(imageName).image;
 
         Rectangle rect = new Rectangle(
                 refImage.getMinX(), refImage.getMinY(),

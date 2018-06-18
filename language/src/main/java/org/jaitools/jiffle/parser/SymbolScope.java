@@ -28,6 +28,7 @@ package org.jaitools.jiffle.parser;
 import org.jaitools.jiffle.JiffleException;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -152,6 +153,25 @@ public abstract class SymbolScope {
             throw new IllegalArgumentException(
                     "Unknown symbol " + name + " in scope " + getName());
         }
+    }
+
+    /**
+     * Returns name of all symbols with the given type, in the current scope and enclosing scopes
+     * @param type
+     * @return
+     */
+    public Set<String> getByType(Symbol.Type type) {
+        Set<String> result = new LinkedHashSet<>();
+        for (Symbol symbol : symbols.values()) {
+            if (type.equals(symbol.getType())) {
+                result.add(symbol.getName());
+            }
+        }
+        if (enclosingScope != null) {
+            result.addAll(enclosingScope.getByType(type));
+        }
+        
+        return result;
     }
 
 }

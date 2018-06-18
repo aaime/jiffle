@@ -6,22 +6,27 @@ import org.jaitools.jiffle.Jiffle;
 import org.jaitools.jiffle.parser.JiffleParserException;
 import org.jaitools.jiffle.parser.OptionLookup;
 import org.jaitools.jiffle.parser.UndefinedOptionException;
-import org.jaitools.jiffle.runtime.JiffleRuntimeException;
 
 import java.util.Map;
+import java.util.Set;
 
-/**
- *
- * @author michael
- */
+/** @author michael */
 public class Script extends AbstractNode {
     private final StatementList stmts;
     private Map<String, String> options;
+    private Set<String> sourceImages;
+    private Set<String> destImages;
     private final GlobalVars globals;
 
-    public Script(Map<String, String> options, GlobalVars globals,
+    public Script(
+            Map<String, String> options,
+            Set<String> sourceImages,
+            Set<String> destImages,
+            GlobalVars globals,
             StatementList stmts) {
         this.options = options;
+        this.sourceImages = sourceImages;
+        this.destImages = destImages;
         this.globals = globals;
         this.stmts = stmts;
     }
@@ -57,15 +62,30 @@ public class Script extends AbstractNode {
         if (model == Jiffle.RuntimeModel.DIRECT) {
             className = "JiffleDirectRuntimeImpl";
         } else {
-            className = "JiffleIndirectRuntimeImpl"; 
+            className = "JiffleIndirectRuntimeImpl";
         }
         w.line(format(template, className, w.getBaseClassName()));
-        
+
         // writing class fields
         w.inc();
+        // ... if we are using a internal class, dodge map lookups while working on pixels
+        if (w.isInternalBaseClass()) {
+            for (String sourceImage : sourceImages) {
+                w.indent().append("SourceImage s_").append(sourceImage).append(";").newLine();
+            }
+            if (model == Jiffle.RuntimeModel.DIRECT) {
+                for (String destImage : destImages) {
+                    w.indent()
+                            .append("DestinationImage d_")
+                            .append(destImage)
+                            .append(";")
+                            .newLine();
+                }
+            }
+        }
         globals.writeFields(w);
         w.newLine();
-        
+
         // adding the constructor
         w.indent().append("public ").append(className).append("() {").newLine();
         w.inc();
@@ -75,7 +95,7 @@ public class Script extends AbstractNode {
         w.dec();
         w.line("}");
         w.newLine();
-        
+
         // add the options init, if required
         if (options != null && !options.isEmpty()) {
             w.line("protected void initOptionVars() {");
@@ -93,16 +113,38 @@ public class Script extends AbstractNode {
             w.dec();
             w.line("}");
         }
-        
+
         // and field initializer method
         w.line("protected void initImageScopeVars() {");
         w.inc();
+        if (w.isInternalBaseClass()) {
+            for (String sourceImage : sourceImages) {
+                w.indent()
+                        .append("s_")
+                        .append(sourceImage)
+                        .append(" = (SourceImage) _images.get(\"")
+                        .append(sourceImage)
+                        .append("\");")
+                        .newLine();
+            }
+            if (model == Jiffle.RuntimeModel.DIRECT) {
+                for (String destImage : destImages) {
+                    w.indent()
+                            .append("d_")
+                            .append(destImage)
+                            .append("= (DestinationImage) _destImages.get(\"")
+                            .append(destImage)
+                            .append("\");")
+                            .newLine();
+                }
+            }
+        }
         globals.write(w);
         w.line("_imageScopeVarsInitialized = true;");
         w.dec();
         w.line("}");
         w.newLine();
-        
+
         // the evaluate method
         if (model == Jiffle.RuntimeModel.DIRECT) {
             w.line("public void evaluate(double _x, double _y) {");
@@ -110,8 +152,8 @@ public class Script extends AbstractNode {
             w.line("public double evaluate(double _x, double _y) {");
         }
         w.inc();
-        
-        // basic checks at the beginnig of pixel evaluation
+
+        // basic checks at the beginning of pixel evaluation
         w.line("if (!isWorldSet()) {");
         w.inc();
         w.line("setDefaultBounds();");
@@ -130,20 +172,17 @@ public class Script extends AbstractNode {
         // the actual script
         w.newLine();
         stmts.write(w);
-        
+
         // in case of indirect runtime, return the result at the end
         if (model == Jiffle.RuntimeModel.INDIRECT) {
             w.line("return result;");
         }
-        
+
         w.dec();
         w.line("}");
-        
+
         // closing class
         w.dec();
         w.line("}");
     }
-
-    
-    
 }

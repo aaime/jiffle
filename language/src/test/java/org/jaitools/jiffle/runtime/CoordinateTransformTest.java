@@ -47,7 +47,7 @@ public class CoordinateTransformTest {
     public void identity_direct() throws Exception {
         System.out.println("   identity transform created directly");
         
-        CoordinateTransform tr = new IdentityCoordinateTransform();
+        CoordinateTransform tr = IdentityCoordinateTransform.INSTANCE;
         Point pt = tr.worldToImage(10.4, 10.6, null);
         assertPoint(10, 11, pt);
     }

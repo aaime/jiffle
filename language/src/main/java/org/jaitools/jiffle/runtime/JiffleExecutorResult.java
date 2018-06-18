@@ -63,7 +63,7 @@ public class JiffleExecutorResult {
      * @return the images keyed by script variable name
      */
     public Map<String, RenderedImage> getImages() {
-        return runtime.getImages();
+        return runtime.get_images();
     }
 
     /**

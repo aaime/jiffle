@@ -66,6 +66,11 @@ public class RuntimeModelWorkerTest {
         assertGeneratedSource("flow.jfl", RuntimeModel.DIRECT, "result", "dtm");
     }
 
+    @Test
+    public void ndvi() throws Exception {
+        assertGeneratedSource("ndvi.jfl", RuntimeModel.DIRECT, "res", "nir", "red");
+    }
+
     private void assertGeneratedSource(String scriptFileName, RuntimeModel model) throws Exception {
         assertGeneratedSource(scriptFileName, model, null);
     }

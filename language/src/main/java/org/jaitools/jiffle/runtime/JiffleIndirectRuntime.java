@@ -72,36 +72,6 @@ public interface JiffleIndirectRuntime extends JiffleRuntime {
     void setDestinationImage(String varName);
     
     /**
-     * Associates a variable name with a source image and coordinate transform.
-     * The transform defines how to convert from processing area coordinates
-     * to image (pixel) coordinates. If {@code tr} is {@code null} the default
-     * identify transform will be used.
-     * <p> 
-     * Note that Jiffle uses rounding to reduce the transformed coordinates to 
-     * integers.
-     * 
-     * @param varName script variable representing the source image
-     * @param tr transform for processing area to image coordinates
-     * 
-     * @throws JiffleException if the world bounds and resolution have not
-     *         been set previously
-     */
-    void setSourceImage(String varName, CoordinateTransform tr)
-            throws JiffleException;
-    
-    /**
-     * Associates a variable name with a source image. Equivalent to:
-     * <pre><code>
-     * setSourceImage(varName, null)
-     * </code></pre>
-     * This convenience method is defined in the interface because it will be
-     * commonly when working directly with image coordinates.
-     * 
-     * @param varName script variable representing the source image
-     */
-    void setSourceImage(String varName);
-
-    /**
      * Evaluates the script for the given world position.
      * 
      * @param x world position X ordinate

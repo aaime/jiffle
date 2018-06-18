@@ -44,7 +44,7 @@ public class CoordinateTransforms {
      * @return a new transform instance
      */
     public static CoordinateTransform identity() {
-        return new IdentityCoordinateTransform();
+        return IdentityCoordinateTransform.INSTANCE;
     }
     
     /**

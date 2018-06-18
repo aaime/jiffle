@@ -122,7 +122,7 @@ public class NullRuntime implements JiffleRuntime {
     }
 
     @Override
-    public Map<String, RenderedImage> getImages() {
+    public Map<String, RenderedImage> get_images() {
         return null;
     }
 

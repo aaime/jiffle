@@ -5,12 +5,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleIndirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractIndirectRuntime {
+    SourceImage s_dtm;
 
     public JiffleIndirectRuntimeImpl() {
         super(new String[] {});
     }
 
     protected void initImageScopeVars() {
+        s_dtm = (SourceImage) _images.get("dtm");
         _imageScopeVarsInitialized = true;
     }
 
@@ -26,11 +28,11 @@ public class JiffleIndirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstr
 
         double v_aData = 0.0;
         double v_bData = 0.0;
-        double v_centralValue = readFromImage("dtm", _x, _y, 0);
-        double v_nValue = readFromImage("dtm", _x + 0.0, _y + -1.0, 0);
-        double v_sValue = readFromImage("dtm", _x + 0.0, _y + 1.0, 0);
-        double v_wValue = readFromImage("dtm", _x + -1.0, _y + 0.0, 0);
-        double v_eValue = readFromImage("dtm", _x + 1.0, _y + 0.0, 0);
+        double v_centralValue = s_dtm.read(_x, _y, 0);
+        double v_nValue = s_dtm.read(_x + 0.0, _y + -1.0, 0);
+        double v_sValue = s_dtm.read(_x + 0.0, _y + 1.0, 0);
+        double v_wValue = s_dtm.read(_x + -1.0, _y + 0.0, 0);
+        double v_eValue = s_dtm.read(_x + 1.0, _y + 0.0, 0);
         double v_nv = -9999.0;
         double v_aspect = v_nv;
         double v_PI = 3.141592653589793;

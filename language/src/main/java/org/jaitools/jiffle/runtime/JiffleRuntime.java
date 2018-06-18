@@ -78,7 +78,7 @@ public interface JiffleRuntime {
      * @throws JiffleException if the world bounds and resolution have not
      *         been set previously
      */
-    void setDefaultTransform(CoordinateTransform tr) throws JiffleException;
+    void setDefaultTransform(CoordinateTransform tr) throws JiffleException, WorldNotSetException;
     
     /**
      * Gets the min X ordinate of the processing area.
@@ -261,5 +261,5 @@ public interface JiffleRuntime {
      * 
      * @return images keyed by variable name
      */
-    Map<String, RenderedImage> getImages();
+    Map<String, RenderedImage> get_images();
 }

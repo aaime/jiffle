@@ -44,7 +44,7 @@ import org.jaitools.jiffle.runtime.JiffleProgressListener;
  */
 public abstract class MockDirectBaseClass 
         extends AbstractJiffleRuntime implements JiffleDirectRuntime {
-
+    
     public MockDirectBaseClass(String[] variables) {
         super(variables);
     }
@@ -83,7 +83,7 @@ public abstract class MockDirectBaseClass
         throw new UnsupportedOperationException("Should not be called");
     }
 
-    public Map<String, RenderedImage> getImages() {
+    public Map<String, RenderedImage> get_images() {
         throw new UnsupportedOperationException("Should not be called");
     }
 

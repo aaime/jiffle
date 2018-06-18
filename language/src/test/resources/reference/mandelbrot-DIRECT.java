@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.AbstractDirectRuntime {
+    DestinationImage d_result;
     double v_MaxIter = Double.NaN;
     double v_MinRe = Double.NaN;
     double v_MaxRe = Double.NaN;
@@ -18,6 +19,7 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
     }
 
     protected void initImageScopeVars() {
+        d_result= (DestinationImage) _destImages.get("result");
         if (Double.isNaN(v_MaxIter)) {
             v_MaxIter = 30.0;
         }
@@ -66,6 +68,6 @@ public class JiffleDirectRuntimeImpl extends org.jaitools.jiffle.runtime.Abstrac
             v_Z_re = v_Z_re2 - v_Z_im2 + v_c_re;
             v_n++;
         }
-        writeToImage("result", _x, _y, 0, v_outside);
+        d_result.write(_x, _y, 0, v_outside);
     }
 }

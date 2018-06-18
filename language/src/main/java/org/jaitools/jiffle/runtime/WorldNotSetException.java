@@ -25,6 +25,8 @@
 
 package org.jaitools.jiffle.runtime;
 
+import org.jaitools.jiffle.JiffleException;
+
 /**
  * A marker exception class used internally by the Jiffle run-time system.
  * 
@@ -32,4 +34,10 @@ package org.jaitools.jiffle.runtime;
  * @since 0.1
  * @version $Id$
  */
-class WorldNotSetException extends Exception { }
+class WorldNotSetException extends JiffleException {
+    
+    
+    public WorldNotSetException() {
+        super("Cannot set transform if the world bounds are not set");
+    }
+}
